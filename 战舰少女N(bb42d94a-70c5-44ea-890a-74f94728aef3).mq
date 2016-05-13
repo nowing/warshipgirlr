@@ -1,0 +1,146 @@
+//*************************************************************
+//战舰少女自用辅助
+//*************************************************************
+Randomize
+
+//常用变量
+Dim intX, intY, i, j, k, ret, temp
+
+//判定是否适用脚本，屏幕分辨率不合适就推出
+checkScreenSize()
+
+
+//设置浮窗移动到中间
+SetControlBarPos 0.3, 1
+
+//分辨率设置
+SetScreenScale 720, 1280
+
+
+//获取UI界面设置参数
+Dim uiMode = ReadUIConfig("cfgMode",0)            //0.出征 1.演习 2.6-1A
+TracePrint "uiMode=" & uiMode
+
+
+//辅助变量
+
+// --------- test area -------------
+//selectYuanZhengGroup()
+//EndScript
+
+
+//-------------主循环------------
+If uiMode = 0 Then 
+    ShowMessage "当前为远征模式"
+    TracePrint "当前为远征模式"
+    execYuanZheng()
+ElseIf uiMode = 1 Then
+    ShowMessage "准备演习"
+    execYanxi()
+End If
+
+
+
+
+//---------- 函数 ----------------
+
+//开始演习循环
+Function execYanxi()
+	
+End Function
+
+
+//开始远征循环
+Function execYuanZheng()
+    If CmpColorEx("504|986|1055AD,227|970|7B7510,331|1116|E6EB6B,277|838|8C6500,572|1253|FFFBF7,34|71|010909,21|274|3A2D11,7|635|ACA59B", 0.9) = 1 Then 
+        TracePrint "进入主界面"
+    end if 
+	
+    While True
+        If CmpColorEx("599|954|3949D6,498|975|5AAAEF,600|1030|4A59D6,582|1055|FFFFFF,372|1071|7B6D19,351|824|DEB631", 0.9)=1 Then 
+            TracePrint "发现远征完成"
+            Tap 492, 956
+            Delay 3000
+            
+            Dim yuanX, yuanY
+            
+            //查找4行中哪一行成功
+            FindMultiColor 158,1018,662,1212,"054AAC","9|-1|014CB6,2|12|044AAD,13|11|004DBB", 0, 0.9, intX, intY
+            If intX > -1 Then 
+                TracePrint "找到远征成功:" & intX & "," & intY
+                yuanX = intX
+                yuanY = intY
+                Tap yuanX + rand(30), yuanY + rand(180)
+                Delay 3000
+                
+                //远征确认画面
+                Tap 70 + rand(30), 1030 + rand(50)
+                Delay 2000
+                
+                //返回远征画面，开始新的远征
+                Tap yuanX + rand(30), yuanY + rand(180)
+                Delay 2000
+                
+                //远征准备画面
+                TracePrint "准备远征"
+                selectYuanZhengGroup()
+            Else 
+                TracePrint "Bug：应有远征"
+                ShowMessage "Bug：应有远征"
+                EndScript
+                
+            End If
+            
+            Delay 5000
+        End if
+    Wend
+	
+	
+End Function
+
+
+Function selectYuanZhengGroup()
+    //从4号舰队开始往前，看是否能远征
+    For i = 0 To 3
+        intx = 225 + rand(10)
+        inty = 840 + rand(10) - 126 * i
+        TracePrint intx & ", " & inty
+        Tap intx, inty
+        Delay 2000
+                	
+        If CmpColorEx("82|608|008CEF,83|623|008EF2,92|634|008EF3", 0.9) = 0 Then 
+            TracePrint "舰队" &(4-i) & "不能出征"
+        Else 
+            //可以出征
+            TracePrint "舰队" & (4-i) & "可以出征"
+            Tap 45 + rand(25), 520 + rand(250)
+            Delay 2000
+            Exit For
+        End If
+    Next
+
+End Function
+
+Function rand(x)
+    rand=randxy(0,x)
+End Function
+
+Function randxy(x, y)
+    randxy = Int((y-x+1)*rnd() + x)
+End Function
+
+//判定是否适用脚本，屏幕分辨率不合适就推出
+Function checkScreenSize()
+    Dim intX = GetScreenX()
+    dim intY = GetScreenY()
+    TracePrint "分辨率=" & intX & " * " & intY
+	
+    If intX = 720 and intY = 1280 Then 
+        TracePrint "分辨率OK"
+    Else
+        ShowMessage "你使用的设备不符合脚本要求。"& "分辨率=" & intX & " * " & intY
+        Delay 5000
+        EndScript
+    End If
+    
+End Function
