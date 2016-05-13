@@ -1,0 +1,940 @@
+//*************************************************************
+//战舰少女自用辅助
+//*************************************************************
+
+//设置浮窗移动到中间
+SetControlBarPos 0.3,1
+//分辨率设置
+SetScreenScale 720, 1280
+
+//*************************************************************
+//获取UI界面设置参数
+//*************************************************************
+Dim ui脚本模式 = ReadUIConfig("脚本模式",0)            //0出征 1远征
+Dim ui出征阵型 = ReadUIConfig("出征阵型",1)            //0单纵 1复纵 2轮型 3梯形 4单横
+Dim ui变阵阵型 = ReadUIConfig("变阵阵型",1)            //0单纵 1复纵 2轮型 3梯形 4单横
+Dim ui出征场次 = ReadUIConfig("出征场次",0)            //0-1次 1-2次 2-3次 3-4次 4-5次
+Dim ui变阵场次 = ReadUIConfig("变阵场次",5)            //1-2场 2-3场 3-4场 4-5场 5-不变
+Dim ui是否夜战 = ReadUIConfig("是否夜战",0)            //0否 1是 2最终战夜战
+Dim ui使用快修 = ReadUIConfig("使用快修",0)              //0使用快修 1不用快修
+Dim ui战斗迂回 = ReadUIConfig("战斗迂回",0)         //0迂回 1不迂回
+Dim ui大破进击 = ReadUIConfig("大破进击",0)         //0大破进击 1大破不进击
+Dim ui偷资源后回港 = ReadUIConfig("偷资源后回港",0) //偷资源后是否回港
+Dim ui保护模式 = ReadUIConfig("保护模式",1)            //0大破保护 1中破保护
+Dim ui保护方法 = ReadUIConfig("保护方法",0)            //0远征 1结束脚本
+Dim ui锁定新船 = ReadUIConfig("锁定新船",0)          //0锁定新船 1不锁定新船
+Dim ui拆船设置 = ReadUIConfig("拆船设置",0)            //0不拆 1拆驱逐 2全拆
+Dim ui拆船取下装备 = ReadUIConfig("拆船取下装备",0)    //0取下装备 1不取装备
+Dim uiSL方式 = ReadUIConfig("SL方式",0)               //0重启游戏 1停止脚本
+Dim uiSL大法 = ReadUIConfig("SL大法",0)                  //0不SL 1.2-1 2.6-1A
+Dim ui修船设置 = ReadUIConfig("修船设置",0)            //0不修 1只修大破 2大破+中破 3全部修理  
+Dim ui出征次数 = CInt(ReadUIConfig("出征次数",5))      //设置出征次数
+Dim ui连续未捞到船 = CInt(ReadUIConfig("连续未捞到船",5))   //连续未捞到船的次数
+Dim ui远征检测 = CInt(ReadUIConfig("远征检测",5))      //检查远征的时间间隔
+Dim ui修船检测 = CInt(ReadUIConfig("修船检测",5))      //检查修理的时间间隔
+Dim ui出征舰队 = ReadUIConfig("出征舰队",0)              //0第一舰队 1第二舰队 2第三舰队 3第四舰队
+Dim ui出征章节 = ReadUIConfig("出征章节",0)              //0第一章 1第二章 2第三章 3第四章 4第五章 5第六章
+Dim ui出征地图 = ReadUIConfig("出征地图",2)              //0.1图 1.2图 2.3图 3.4图 4.5图 
+
+
+//*************************************************************
+//变量声明
+//*************************************************************
+Dim intX,intY
+
+//判定是否适用脚本
+intX = GetScreenX
+intY = GetScreenY
+If intx <> 720 and inty <> 1280 Then 
+    ShowMessage "你使用的设备符合脚本要求"
+    Delay 1500    
+Else 
+    ShowMessage "你使用的设备不符合脚本要求"
+    Delay 3000
+    EndScript
+End If
+
+//中间变量
+Dim 上个界面 = ""
+Dim 需要选图 = True
+Dim 需要派遣远征 = False
+Dim 需要拆船 = False
+Dim 选择需拆船 = False
+Dim 当前时间 = Time()
+Dim 上次检测远征 = Time()
+Dim 上次检测修船 = Time()
+Dim 上次检测出征 = Time()
+Dim 出征完成 = 0
+Dim 初次出征 = True
+Dim 战斗次数 = 0
+Dim 需要修理 = False
+Dim 索敌成功 = False
+Dim 需要补给 = True
+Dim 战斗计数 = 0
+Dim 没有连续捞到船的次数=0
+Dim 远征完成队伍=Array(-1,-1,-1)
+Dim temp=0                                        //用于for循环
+
+//出征血量检查
+Dim 未破 = "19DC15"
+Dim 中破 = "078BB9" 
+Dim 大破 = "0808BA"
+
+Dim 保护颜色
+Select Case ui保护模式
+Case 0
+    保护颜色 = 大破
+Case 1
+    保护颜色 = 大破&"|"&中破
+End Select
+
+//*************************************************************
+//修正变量
+//*************************************************************
+If ui修船设置 > 0 Then 
+    需要修理 = True
+End If
+
+If ui远征检测 = 0 Then 
+    ui远征检测 = 1
+End If
+
+If ui修船检测 = 0 Then 
+    ui修船检测 = 1
+End If
+
+If ui出征次数 = 0 Then 
+    ui出征次数 = 500
+End If
+
+If ui连续未捞到船 = 0 Then 
+    ui连续未捞到船 = 5
+End If
+
+//SL大法强制判定
+If uiSL大法 = 1 Then //2-1斩首
+    ui脚本模式 = 0
+    ui出征章节 = 1
+    ui出征地图 = 0
+End If
+
+If uiSL大法 = 2 Then //4-3偷铝
+    ui脚本模式 = 0
+    ui出征章节 = 5
+    ui出征地图 = 3
+    ui出征场次 = 2
+End If
+
+If uiSL大法 = 3 Then //6-1A
+    ui脚本模式 = 0
+    ui出征章节 = 5
+    ui出征地图 = 0
+    ui出征阵型 = 4
+    ui出征场次 = 0
+    ui是否夜战 = 0
+End If
+
+//统计记录
+Dim 日期
+
+Dim count_yesterday=0//跨天运行时，记录本次运行下，昨天的战斗次数
+Dim count_today=读取当天战斗次数()//累计今天的战斗次数
+Dim count快修=0
+
+If ReadUIConfig("脚本模式") = 0 Then
+    ShowMessage "当前模式为出征模式"
+Else
+    ShowMessage "当前模式为远征模式"
+End If
+Delay 3000
+
+Call 显示统计信息()
+Delay 3000 //弹出的信息阻碍了取色，等弹出的消息消失
+
+
+Function checkNetScr()
+    If CmpColorEx("534|432|FFFFFF,555|475|FFFFFF,541|424|FFFFFF,242|596|FFFFFF,245|668|FFFFFF,408|591|FFFFFF,",0.9)=1 Then
+        TracePrint "检查网络界面"
+        Tap 240,631
+        TracePrint "点击确认"
+        checkNetScr = true
+    Else 
+        checkNetScr = false
+    End If
+End Function
+
+Function checkNetBreak()
+    If CmpColorEx("533|426|FFFFFF,532|489|FEFEFE,555|457|FFFFFF,430|382|FFFFFF,423|894|FFFFFF,367|698|FEFEFE,261|543|EFCA42,263|836|3A49CE",0.9)=1 Then
+        TracePrint "网络连接不通界面"
+        Tap 243,496
+        TracePrint "点击确认"
+        checkNetBreak = true
+    Else 
+        checknetBreak = false
+    End if
+End Function
+
+Function lockNewShip()
+    if iCmpColorEx("556|489|DEDFD6,530|500|DEDFD6,549|542|CECABD,530|421|CECBBE,529|467|DDD9D4,527|544|73694A,388|602|CEDBDE,407|585|F7F7F7,411|610|9CBABD,538|385|945908", 0.9) = 1 Then
+        TracePrint "锁定新船界面"
+        If ui锁定新船 = 0 Then  //锁定
+            Tap 248, 493
+        Else 
+            Tap 247,783           //不锁定  
+        End If
+    end if
+End Function
+
+Function stealResource()
+    If CmpColorEx("535|365|635D3A,536|406|FFFFFF,521|423|DEDFD6,510|369|958F75,503|310|B5B6B5,537|691|AD8608,258|586|DEBA3A,241|710|CDA108,191|283|949E9C,184|993|A59785", 0.9) = 1 Then
+        TracePrint "资源点"  //待重新判定条件
+        Tap 242,636
+        Delay 300
+        If ui偷资源后回港 = 0 Then 
+            ShowMessage "资源到手，此时不走，更待何时"
+            Delay 1000
+            Call sl大法("资源到手，此时不走，更待何时")
+        End If
+    End if
+End Function
+
+
+//*************************************************************
+//主函数循环
+//*************************************************************
+Do
+    KeepCapture 
+    
+    //首先是各种提示界面
+    If checkNetScr() then
+        TracePrint "检查网络界面"
+    ElseIf checkNetBreak() Then
+        TracePrint "网络连接不通界面"
+    ElseIf lockNewShip() Then
+        TracePrint "锁定新船界面"
+    ElseIf stealResource() Then
+        TracePrint "资源点"  //待重新判定条件
+        //各种提示界面结束，有新的往上面加！！！
+        
+        
+        
+        // 以下为各种主界面操作
+    ElseIf CmpColorEx("504|986|1055AD,227|970|7B7510,331|1116|E6EB6B,277|838|8C6500,572|1253|FFFBF7,34|71|010909,21|274|3A2D11,7|635|ACA59B", 0.9) = 1 Then 
+        TracePrint "进入主界面"
+        上个界面 = "主界面"
+        If 战斗计数 >= ui出征次数 Then 
+            Call 开启远征模式()            
+        End If
+        
+        If CmpColorEx("62|594|0008BD,69|604|2992CE,60|615|2104D6,84|605|52DADE,53|450|EFCA42,21|444|C59200",0.9)=1 Then 
+            TracePrint "发现有任务完成"
+            Tap 37, 521
+            TracePrint "点击任务"
+            
+        ElseIf CmpColorEx("599|954|3949D6,498|975|5AAAEF,600|1030|4A59D6,582|1055|FFFFFF,372|1071|7B6D19,351|824|DEB631", 0.9) = 1 Then
+            TracePrint "发现远征完成"
+            Tap 486, 956
+            TracePrint "点击出征"
+        ElseIf 需要拆船 = True And ui拆船设置 > 0 Then
+            Tap 359, 820
+            TracePrint "点击建造"
+            Delay 1000
+            Tap 551, 65
+            TracePrint "点击解体"
+        Else
+            当前时间 = Time()
+            If 当前时间 - 上次检测修船 >= ui修船检测 * 60 And ui修船设置 > 0 And 需要修理=True Then 
+                上次检测修船 = 当前时间
+                Tap 225, 964
+                TracePrint "点击船坞"
+                Delay 1000
+                Tap 549, 63
+                TracePrint "点击修理"
+            End If
+            Select Case ui脚本模式
+            Case 0
+                Tap 522, 985
+                TracePrint "点击出征"
+            Case 1
+                TracePrint "当前模式：远征"
+                Delay 30000
+            End Select
+        End If
+        
+        
+    // 以下在任务界面
+    ElseIf CmpColorEx("655|26|847E64,653|52|EEEFE6,621|104|0049AD,540|55|FEFEFE,448|80|F7F7F7,349|29|3A3100,257|100|FFFFFF,278|109|5A4D10,119|36|BDBAB5,668|8|296AB6", 0.9) = 1 Then
+        TracePrint "进入任务界面"
+        FindMultiColor 21,1097,626,1242,"428AEF","-22|-43|004DB5,-30|51|0049AD,-15|13|FFFFFF",0,0.9,intX,intY
+        If intX>-1 And intY>-1 Then 
+            TracePrint "发现有完成的任务"
+            Tap intX, intY
+            TracePrint "点击完成"
+            Delay 2000
+            Tap 264, 631
+            TracePrint "点击领取奖励"
+        Else 
+            Tap 63,72
+            TracePrint "没有发现完成了的任务,点击港口，返回主界面"
+        End If
+        
+    // 以下在出征界面
+    ElseIf CmpColorEx("632|58|4A4110,636|88|D6D3C6,625|83|0049B5,625|122|003583,520|113|BD8E00,442|117|C59600,366|69|EEC242,366|23|4A4108,477|23|AD9129,115|42|3A353A", 0.9) = 1 Then
+        上个界面="出征选图界面"
+        TracePrint "进入出征选图界面"
+        If 初次出征 = True And 需要选图 = True Then 
+            Delay 1000 //防止卡顿出现选错图
+            Select Case ui出征章节
+            Case 0 //第一章
+                Swipe 55, 350, 55, 1170
+                Delay 1000
+                Tap 67, 755
+                Delay 500
+                Tap 61,465
+                Delay 500
+            Case 1 //第二章
+                Swipe 55, 350, 55, 1170
+                Delay 1000
+                Tap 61,465
+                Delay 500
+                Tap 67, 755
+                Delay 500
+            Case 2 //第三章
+                Swipe 55, 350, 55, 1170
+                Delay 1000
+                Tap 67, 755
+                Delay 500
+                Tap 69,1083
+                Delay 500
+            Case 3 //第四章
+                Swipe 55, 1070, 55, 50
+                Delay 1000
+                Tap 65,689
+                Delay 500
+                Tap 70,357
+                Delay 500
+            Case 4 //第五章
+                Swipe 55, 1070, 55, 50
+                Delay 1000
+                Tap 70,357
+                Delay 500
+                Tap 65, 689
+                Delay 500
+            Case 5 //第六章
+                Swipe 55, 1070, 55, 50
+                Delay 1000
+                Tap 65,689
+                Delay 500
+                Tap 65, 1001
+                Delay 500
+            End Select
+            
+            Select Case ui出征地图
+            Case 0
+                Tap 378, 656
+            Case 1
+                Swipe 377, 983, 377, 483
+                Delay 500
+                Tap 378, 656
+            Case 2
+                Swipe 377, 983, 377, 483
+                Delay 500
+                Swipe 377, 983, 377, 483
+                Delay 500
+                Tap 378, 656
+            Case 3
+                Swipe 377, 983, 377, 483
+                Delay 500
+                Swipe 377, 983, 377, 483
+                Delay 500
+                Swipe 377, 983, 377, 483
+                Delay 500
+                Tap 378, 656
+            Case 4
+                Swipe 377, 983, 377, 483
+                Delay 500
+                Swipe 377, 983, 377, 483
+                Delay 500
+                Swipe 377, 983, 377, 483
+                Delay 500
+                Swipe 377, 983, 377, 483
+                Delay 500
+                Tap 378, 656
+            End Select
+            需要选图 = False
+        Else 
+            Tap 378, 656
+            TracePrint "点击进入出征准备"
+        End If
+        战斗次数 = 0
+        
+    //出征准备界面
+    ElseIf CmpColorEx("651|110|624508,640|121|FFFFFF,643|174|CFCBBE,641|212|E7E7DF,650|211|A59A84,627|179|5B3D00,631|128|5D532C,636|79|958F85,643|44|E6B508,620|259|292410", 0.9) = 1 Then
+        TracePrint "进入出征准备界面"
+        If 初次出征 = True And ui出征舰队 > 0 Then
+            Select Case ui出征舰队 //选择出征舰队
+            Case 0
+                Tap 244, 475
+            Case 1
+                Tap 237, 600
+            Case 2
+                Tap 238, 729
+            Case 3
+                Tap 238,853
+            End Select
+            初次出征 = False
+            Delay 1000
+            Goto 重新截图检测
+        End If
+        FindMultiColor 400,300,400,1100, "2928AD","8|16|BDBAD6,8|58|31347B,15|67|FFFFFF,0|98|19148C", 0, 0.9, intX, intY           //取色判定是否需要补给
+        If intX > -1 And intY > -1 Then //需要补给，点快速补给
+            Tap 646, 1207
+        Else 
+            FindColor 319,319,316,1083,保护颜色,0,0.9,intX,intY
+            If intX > -1 And intY > -1 Then 
+                TracePrint "发现有船大破或中破,坐标：",intX,",",intY
+                If ui使用快修 = 0 Then
+                    Tap 551,1206
+                    TracePrint "点击快速修理"
+                Else 
+                    需要修理 = True
+                    Call 开启保护模式()
+                    Tap 66,1210
+                    TracePrint "点击返回"
+                    Delay 500
+                    Tap 39,71
+                    TracePrint "点击港口"
+                End If
+            Else
+                If CmpColorEx("109|619|E6EEF7,29|538|B5C2CE,29|640|B5C2C5,24|734|627072,65|814|B5B2B5,16|776|4A4121,652|142|7B7152,649|211|ACA593,629|175|FFFBFF,636|82|4B462B", 0.9) = 1 Then
+                    //出征按钮灰色，猜测船满或远征中
+                    If ui拆船设置 = 0 Then 
+                        Tap 70, 1208
+                        Delay 500
+                        Tap 55,74
+                        Call 开启远征模式()
+                        需要拆船 = False
+                    Else 
+                        需要拆船 = True  //??
+                        ShowMessage "请注意，要开始拆船啦！"
+                        Tap 70, 1208
+                        Delay 500
+                        Tap 55,74
+                    End If
+                Else    
+                    Tap 71,641  //点击出征开始
+                    索敌成功 = False
+                    初次出征 = True 
+                End If
+            End If
+        End If
+        
+    //快速补给窗口    
+    ElseIf CmpColorEx("603|254|423908,564|144|523921,586|310|837D59,590|373|C5C2B5,591|692|7B6519,196|924|423100,607|303|EFEFE6,583|336|F7F3EF,585|373|746E43,579|258|D3D4CA", 0.9) = 1 Then
+        上个界面 = "快速补给窗口"
+        TracePrint "进入快速补给窗口"
+        Tap 193,845
+        TracePrint "点击全部补给"
+        Delay 500
+        Tap 585, 1032
+        TracePrint "点击关闭"
+        需要补给 = False
+        
+        //快速修理窗口
+    ElseIf CmpColorEx("595|253|E5E1DC,579|312|D3D4CB,608|357|443B0B,588|375|FFFFFF,579|379|5B4108,575|177|8C8E8C,588|463|945D10,176|925|5B4100,319|985|8B7D6A,610|647|8C7108", 0.9) = 1 Then
+        上个界面 = "快速修理窗口"
+        TracePrint "进入快速修理窗口"
+        If ui使用快修 = 0 Then
+            FindColor 305,180,305,954,保护颜色,0,0.9,intX,intY
+            If intX > -1 And intY > -1 Then 
+                TracePrint "发现有船大破或中破,点击坐标：", intX, ",", intY
+                Tap intX, intY
+                count快修 = count快修 + 1
+                Call 显示统计信息()
+                Delay 2000
+            Else 
+                TracePrint "没有发现有船大破或中破，点击关闭"
+                Tap 587, 984
+            End If
+        Else 
+            Tap 587, 984 //点击关闭
+        End If
+        
+        //索敌结果界面
+    ElseIf CmpColorEx("122|795|4285CD,122|867|08204A,36|903|93A1AB,212|1176|73A2B5,480|898|73A2BD,512|681|9CB6CD,541|656|7BA2BD,112|964|195DAD,91|971|00357C,94|857|FFFFFF", 0.9) = 1 Then
+        上个界面 = "索敌结果界面"
+        TracePrint "进入索敌结果界面"
+        索敌成功 = True
+        If uiSL大法 = 3 Then 
+            If CmpColorEx("495|250|7B45A4,451|308|524D5A,441|342|F7F7FF,503|508|31313A,456|530|8471CE,487|544|73359C,482|425|B5A673,459|445|D6DBD6",0.9)=1 Then 
+                ShowMessage "发现航妈，先撤了"
+                Delay 1000
+                Call sl大法("发现航母")
+            End If
+        Else 
+            If ui战斗迂回 = True And CmpColorEx("122|1018|EFC941,86|1012|BF8D00,84|1164|BB8B00,112|1136|FFFFFC,114|1178|A58A28,118|1075|FFFFFC",0.9)=1 Then 
+                Tap 103,1091
+                TracePrint "点击战斗迂回"
+            Else 
+                Tap 104,880
+                TracePrint "点击开始战斗"
+            End If
+        End If
+        
+        //进图选战斗点
+    ElseIf CmpColorEx("658|20|845508,637|15|6B5942,636|783|8D725C,713|844|5A3900,642|1265|9B847A,717|1260|CCCCCB,650|991|836508,663|443|D5AD00,641|99|947109,664|40|633D09", 0.9) = 1 Then
+        上个界面 = "进图选点"
+        TracePrint "进入进图选点界面"
+        Tap 350, 600
+        Delay 300
+        If uiSl大法 = 1 Then //2-1斩首
+            If CmpColorEx("525|402|219A7B,528|461|21997B,522|462|318D94,659|32|945D10,649|365|5D4F10,677|612|9C967B,705|623|6B4901,685|633|736D4A,677|665|DCE0D3,705|666|6B4909", 0.9) = 1 Then
+                ShowMessage "好像迷路了,我要重来"
+                Delay 1000
+                Call sl大法("迷路了")
+            ElseIf CmpColorEx("472|592|299E84,469|593|318184,478|660|319E8C,667|19|ADA295,677|631|75704D,703|664|635931,660|568|C6C6B5,638|659|F7F7F7,640|587|645E3B,658|804|B57908", 0.9) = 1 Then
+                ShowMessage "超过4条船就别来斩首了..."
+                Delay 1000
+                Call sl大法("迷路了")
+            End If
+        ElseIf uiSl大法 = 2 Then //4-3偷铝
+            If CmpColorEx("357|966|3985AC,354|1033|316D9C,352|1035|4191A4,643|18|D4B808,701|618|958A6C,700|671|95937D,655|618|B5B6A4,651|558|94927B,648|699|FFFFFF,635|629|9C967B", 0.9) = 1 Then 
+                ShowMessage "资源不在这边啊喂"
+                Delay 1000
+                Call sl大法("迷路了")
+            End If
+        End If
+        
+        //选择阵型界面
+    ElseIf CmpColorEx("630|859|845108,631|1017|7BE36B,661|598|C58110,382|1208|3AAA31,203|981|211800,134|601|BD7D10,119|1030|52CA4A",0.9)=1 Then 
+        上个界面 = "选择阵型界面"
+        TracePrint "进入选择阵型界面"
+        If 索敌成功 = False And uiSL大法 = 3 Then 
+            ShowMessage "没发现敌人？那估计是航妈，先撤"
+            Delay 1000
+            Call sl大法("索敌失败，猜测是航母")
+        Else
+            If 战斗次数 >= ui变阵场次 + 1 Then 
+                Select Case ui变阵阵型
+                Case 0
+                    Tap 626,1034
+                    TracePrint "点击单纵"
+                Case 1
+                    Tap 488,1125
+                    TracePrint "点击复纵"
+                Case 2
+                    Tap 359,1174
+                    TracePrint "点击轮型"
+                Case 3
+                    Tap 224,1123
+                    TracePrint "点击梯形"
+                Case 4
+                    Tap 96,1037
+                    TracePrint "点击单横"
+                End Select
+            Else 
+                Select Case ui出征阵型
+                Case 0
+                    Tap 626,1034
+                    TracePrint "点击单纵"
+                Case 1
+                    Tap 488,1125
+                    TracePrint "点击复纵"
+                Case 2
+                    Tap 359,1174
+                    TracePrint "点击轮型"
+                Case 3
+                    Tap 224,1123
+                    TracePrint "点击梯形"
+                Case 4
+                    Tap 96,1037
+                    TracePrint "点击单横"
+                End Select
+            End If
+            Delay 10000 //此处可以做修改添加选点SL
+        End If
+        
+        //是否进入夜战
+    ElseIf CmpColorEx("379|791|FFFEFD,296|543|054AAB,423|715|F1CD41,368|808|BB8E00,342|470|FAFBF9,340|549|F8FEFF,318|523|FFFFFF,321|542|0F4084",0.9)=1 Then
+        TracePrint "进入是否夜战界面"
+        If ui是否夜战 = 1 Or (ui是否夜战 = 2 And 战斗次数 = ui出征场次) Then 
+            Tap 326, 508
+            TracePrint "点击进入夜战"
+        Else 
+            Tap 394, 758
+            TracePrint "点击不进夜战"
+        End If
+        
+        //战斗评估
+    ElseIf CmpColorEx("709|586|736949,706|630|848163,698|680|FFFFFF,714|695|6C5F34,690|697|EFE7E7,101|822|BD9A52,98|967|533108,100|1124|8C6529,35|1041|FFFFFF,28|1176|F7F2E6", 0.9) = 1 Then
+        上个界面 = "战斗评价界面"
+        TracePrint "进入战斗评价界面"
+        战斗计数 = 战斗计数 + 1
+        Call 记录当天战斗次数()
+        Call 显示统计信息()
+        需要补给 = True
+        Tap 30,1096
+        TracePrint "点击OK"
+        
+        //战斗经验
+    ElseIf CmpColorEx("689|584|C4C0B2,713|606|634511,710|655|FEFEFE,690|694|B5B6A4,678|496|E6E6E6,645|398|DEDBD6,643|461|F6F6F6,647|512|543E02,70|1183|625129,48|1195|FFFFFF", 0.9) = 1 Then
+        TracePrint "进入战斗经验界面"
+        Tap 54, 1157
+        TracePrint "点击OK"
+        上个界面 = "战斗经验界面"
+        
+        //捞出船了
+    ElseIf CmpColorEx("289|1247|DEBE4A,268|1269|B57919,220|1251|F7E2AC,184|1267|726019,167|1238|312D19,112|1239|292829,35|1220|6B656B,124|45|DEDBDE,40|58|6B6D6B,268|1255|B57919", 0.9) = 1 Then
+        TracePrint "进入捞船界面"
+        没有连续捞到船的次数 = 0
+        Tap 207,1009
+        TracePrint "点击任意位置"
+        上个界面 = "捞船界面"
+        
+        //是否继续前进
+    ElseIf CmpColorEx("423|665|AD9231,418|749|F7D24A,390|721|FFFFFF,357|763|BD8A00,357|836|846100,467|616|ADAAAD,249|659|A5A6A5,396|788|FFFBF7",0.9)=1 Then 
+        TracePrint "进入是否继续前进界面"
+        If CmpColorEx("74|499|FFFFFF,63|531|D6D3CE,73|630|0024E5,58|661|0820CE,76|686|0020DE,57|705|CECECE,79|746|E6EBE6,296|602|08148C,410|676|EFCA42,372|741|C5BEAD", 0.9) = 1 Then 
+            //大破判定
+            If ui大破进击 = 0 Then //大破进击
+                Tap 332, 519
+            Else                     //大破回港
+                Tap 392, 753
+                ShowMessage "舰船大破了"
+            End If            
+        Else 
+            If CmpColorEx("363|430|3161AD,360|531|428EF7,297|485|0049A5,296|600|003173,318|531|FFFFFF",0.9)=1 And 战斗次数 < ui出征场次 Then 
+                Tap 329,515
+                TracePrint "点击前进"
+                战斗次数=战斗次数+1
+            Else 
+                If 上个界面 <> "捞船界面" Then 
+                    没有连续捞到船的次数 = 没有连续捞到船的次数 + 1
+                    If 没有连续捞到船的次数 = ui连续未捞到船 Then 
+                        ShowMessage "运气太差了，还是歇歇吧"
+                        Delay 1000
+                        Call 开启保护模式()
+                    End If
+                End If
+                Tap 388,757
+                TracePrint "点击回港"
+            End If
+        End If
+        上个界面 = "是否继续前进界面"
+        
+        //旗舰大破
+    ElseIf CmpColorEx("196|875|F5D246,146|875|BE8E00,173|930|FDFFFF,183|1034|FFFEFF,146|1050|BD8D00,531|731|C18601,342|741|A0B9C3,428|1108|8786FE",0.9)=1 Then 
+        TracePrint "进入旗航大破回港界面"
+        Tap 169,958
+        TracePrint "点击旗航大破回港"
+        
+        //远征派遣船队
+    ElseIf CmpColorEx("466|64|2175D6,451|98|EEEFE6,640|108|C59900,337|89|BD8E00,98|88|A59F95,464|32|FFFFFF,479|102|3A6DAD,445|111|313519,457|127|084D9C,422|8|00387A", 0.9) = 1 Then
+        TracePrint "进入远征派遣舰队界面"
+        上个界面 = "进入远征派遣舰队界面"        
+        If 远征完成队伍(1)>-1 And 远征完成队伍(2)>-1 And 需要派遣远征 = True Then
+            Tap 远征完成队伍(1), 远征完成队伍(2)
+            TracePrint "远征派遣舰队"
+        Else 
+            远征完成队伍(0) = -1
+            远征完成队伍(1) = -1
+            远征完成队伍(2) = -1
+            FindMultiColor 157,1010,678,1228,"428EF7","-5|-85|3A86EF,-3|82|4286EF,-40|-90|084DB5,-22|-11|FFFFFF,-20|61|EFF3F7,-44|81|0049AD",0,0.9,intX,intY
+            If intX > -1 And intY > -1 Then 
+                远征完成队伍(0) = 1
+                远征完成队伍(1) = intX
+                远征完成队伍(2) = intY
+                Tap 远征完成队伍(1), 远征完成队伍(2)
+                TracePrint "点击完成远征"
+                需要派遣远征 = True
+                Delay 1000
+                Tap 350,700
+            Else 
+                Tap 38, 65
+                TracePrint "没有找到完成了远征的队伍，点击港口，返回主界面"
+            End If
+        End If
+        
+        //远征结果结算
+    ElseIf CmpColorEx("704|583|8D8365,711|640|734D09,711|697|5C4B23,687|695|4A3D08,691|627|CECBBE,45|1110|D6BEA4,26|1045|AC7D52,715|456|312010,704|625|C5C2B5,708|688|FFFFF7", 0.9) = 1 Then
+        TracePrint "进入远征结果界面"
+        Tap 38,1101
+        TracePrint "点击OK"  //不能返回完成远征舰队的值，或可删除此界面判定
+        
+        //远征准备
+    ElseIf CmpColorEx("631|47|8C5908,638|81|945908,651|109|645A2B,636|113|FFFBFF,638|242|AD6D00,549|184|7B9EB5,547|266|FFFFFF,630|152|F7F7F7,548|44|9CB6BD",0.9)=1 Then //远征按钮可用 或者 远征按钮不可用
+        TracePrint "进入远征准备界面"
+        If ui脚本模式 = 0 and 远征完成队伍(0) = 1 Then 
+            远征完成队伍(0) = 远征完成队伍(0) + 1
+            Tap 235,600
+        ElseIf CmpColorEx("51|523|73D2F7,71|551|9CEBFF,86|625|008EF7,71|680|A4EFFF,36|738|1996EF,88|706|B5C6CE,59|771|4A868C",0.9)=1 Then 
+            Tap 67, 634
+            需要派遣远征 = False
+            远征完成队伍(1) = -1
+            远征完成队伍(2) = -1
+        ElseIf CmpColorEx("51|523|E6EFF7,71|551|EFFBFF,86|625|BDC2CE,71|680|EFFBFF,36|738|BDC6CE,88|706|E6F3F7,59|771|ADB6BD", 0.9) = 1 Then 
+            Select Case 远征完成队伍(0)
+            Case 1
+                Tap 235, 600
+            Case 2
+                Tap 238, 728
+            Case 3
+                Tap 236, 854
+            Case 4
+                Tap 69, 1205
+                TracePrint "没有获取到完成远征的队伍，点击返回"
+            End Select
+            远征完成队伍(0) = 远征完成队伍(0) + 1
+        End If
+        
+        
+        //修船
+    ElseIf CmpColorEx("558|23|DFDFD7,544|70|193D5B,578|81|428EF7,529|61|0049AD,469|106|7B7552,353|24|423900,616|71|C58E00,542|73|393509,571|105|746A4B,555|23|BCB5A3", 0.9) = 1 Then
+        TracePrint "进入修船界面"
+        If ui修船设置 > 0 And 需要修理 = True Then 
+            FindMultiColor 50,397,570,397,"4A3908","-26|-61|BD8E00,18|-49|EFCE42,-19|56|B58600,19|68|F7CE42,-19|77|8C6900,19|-72|EFE383", 0, 0.9, intX, intY
+            If intX > -1 And intY > -1 Then 
+                TracePrint "找到空澡堂：", intX, ",", intY
+                If 上个界面 <> "修理界面——有空澡堂" Then
+                    Tap intX, intY
+                    TracePrint "点击空澡堂"
+                    上个界面 = "修理界面——有空澡堂"
+                    Goto 重新截图检测
+                Else 
+                    Tap 47, 71
+                    TracePrint "点击港口"
+                End If
+            Else 
+                TracePrint "没有找到空澡堂"
+                上个界面 = "修理界面——没有空澡堂"
+                Tap 78, 59
+                TracePrint "点击港口"
+            End If
+        Else 
+            Tap 55,77   //返回港口主界面
+        End If
+        
+        //选择修船
+    ElseIf CmpColorEx("649|142|736131,632|268|F7FBF7,652|252|84866B,620|255|312410,629|89|FFFFFF,655|57|6B5121,634|14|CECECE,623|166|A46508,655|244|BD7D08,650|268|B5B2A4", 0.9) = 1 Then
+        TracePrint "进入选择修理舰船界面"
+        上个界面 = "选择修理舰船界面"
+        需要修理 = True
+        If 需要修理 = True And ui修船设置 = 0 Then 
+            ui修船设置 = 3
+        End If
+        //修船优先级：大破>中破>小破
+        FindColor 197,27,208,1100,大破,0,0.9,intX,intY
+        If intX>-1 And intY>-1 Then 
+            Tap intX + 200, intY
+            TracePrint "选择修理一条大破的船"
+        Else 
+            FindColor 197,27,208,1100,中破,0,0.9,intX,intY
+            If intX>-1 And intY>-1 Then
+                Tap intX + 200, intY
+                TracePrint "选择修理一条中破的船"
+            Else
+                If ui修船设置 = 2 Then
+                    需要修理 = False
+                    ui修船设置 = 0
+                Else 
+                    Tap 447,108
+                    TracePrint "选择修理第一条船"
+                End If
+            End If
+        End If
+        
+        //选择上阵舰队
+    ElseIf CmpColorEx("649|7|CCCCCC,640|55|815E19,639|80|76510A,633|249|FFFFFF,640|267|825F19,493|101|F2CE44,525|84|B9B9B9", 0.9) = 1 Then
+        TracePrint "进入选择上阵舰船界面"
+        Delay 200
+        Tap 67, 1210
+        TracePrint "点击返回"
+        上个界面 = "选择上阵舰船界面"
+        
+        
+        //拆船开始
+    ElseIf CmpColorEx("564|67|317DE6,526|68|0049AD,544|59|524921,562|23|393919,539|23|313108,546|107|C5C2B5,664|81|423D08,663|119|EFCA42,477|124|EFCA42,372|125|B59631", 0.9) = 1 Then
+        TracePrint "进入舰船解体界面"   //待修改
+        If 需要拆船 = True Then 
+            If 选择需拆船 = True Then 
+                If ui拆船取下装备 = 0 Then  //是否取下装备
+                    Tap 200,684
+                End If
+                Tap 139,1076
+                TracePrint "点击解体"
+                选择需拆船 = False
+                ui拆船设置 = 0
+                Delay 1000
+                Tap 49,71
+                TracePrint "点击港口，返回主界面"
+            Else 
+                Tap 451,258
+                TracePrint "点击添加材料"
+                Delay 500
+            End If
+        Else 
+            Tap 49,71
+            TracePrint "点击港口，返回主界面"  
+        End If
+        
+        //选择要拆的船
+    ElseIf CmpColorEx("639|115|CECFBE,628|110|BCB9A3,630|154|EFF3EF,655|191|DEAE29,640|50|9C6100,629|264|FFFFFF,629|243|7C6B3B,653|140|6A4900,628|186|844D00,618|256|292008", 0.9) = 1 Then
+        TracePrint "进入添加解体舰船界面"
+        If 需要拆船 = True And ui拆船设置 > 0 Then  //可能需要修改
+            Delay 200
+            If ui拆船设置 = 1 Then 
+                Tap 642,1207
+                TracePrint "点击显示"
+                Delay 300
+                Tap 371,743
+                TracePrint "点击驱逐"
+                Delay 300
+            Else
+                Tap 511,1208
+                TracePrint "点击排序"
+                Delay 300
+                Tap 161,878
+                TracePrint "点击稀有度排序（升序）"
+                Delay 300
+            End If
+            For temp = 0 To 15  //选择须拆船
+                Tap 469-271*(temp\8), 107+132*(temp mod 8)
+                Delay 200
+            Next
+            Tap 182,1209
+            TracePrint "点击确定"
+            选择需拆船 = True
+            Delay 200
+        Else 
+            Tap 66,1207
+            TracePrint "点击返回"   //无需拆船
+        End If
+        
+        //游戏登录
+    ElseIf CmpColorEx("542|267|C58110,544|305|8C5508,557|328|FFFFFF,531|383|FFFFFF,555|458|9C6108,526|1051|10109C,266|889|3181E6,230|881|084DAD,229|401|BD8E00,452|1004|293D4A",0.9)=1 Then 
+        TracePrint "进入游戏登陆界面"
+        Tap 250, 891
+        TracePrint "点击登陆"
+        Delay 2000
+        
+        //游戏选区
+    ElseIf CmpColorEx("237|622|3A3973,617|75|F7BE3A,657|269|3ACAEF,104|493|FFEFB5,105|624|D6C673,100|793|DED28C,52|1242|2979DE,56|1175|1075CE,150|337|938E94,",0.9)=1 Then 
+        TracePrint "进入游戏选区界面"
+        Tap 70, 636
+        TracePrint "点击进入游戏"
+        Delay 2000
+        
+        //游戏公告
+    ElseIf CmpColorEx("691|67|B57500,682|42|C6CAC6,701|184|D6D2C5,680|276|FFFFFF,676|730|945D10,670|1250|080C94,660|1095|C5CED6,65|291|9CB6C5",0.9)=1 Then
+        TracePrint "进入游戏公告界面"
+        Tap 61, 63
+        Delay 500
+        Tap 685,1250
+        TracePrint "点击关闭公告"
+                
+        //登录奖励
+    ElseIf CmpColorEx("661|273|B57500,658|415|FFFFFF,658|451|FFFFFF,568|1253|4A494A,39|1262|4A494A",0.9)=1 Then 
+        TracePrint "进入领取登录奖励界面"
+        Tap 651,1047
+        TracePrint "点击领取奖励或关闭"
+        
+        //舰队编成，返回主界面
+    ElseIf CmpColorEx("665|61|3A81E6,636|107|4A3D10,632|53|7A7051,647|38|FFFFFF,570|76|DFDFD6,476|44|FFFFFF,388|90|EFCE42,629|123|003D94,434|126|947100,55|80|FFFFFF", 0.9) = 1 Then
+        TracePrint "舰队编成，编队界面"
+        Tap 56,80
+        TracePrint "点击返回港口"
+        
+        // 商城界面，返回主界面
+    ElseIf CmpColorEx("623|67|0049AD,667|65|3A86E6,661|107|ADAE9C,634|29|EEEAE6,573|64|EFCE42,546|96|FFFFFF,442|127|8C6900,449|101|C59A00,450|29|F5F1EC,75|107|B5D2EF", 0.9) = 1 Then
+        TracePrint "商城界面"
+        Tap 56,80
+        TracePrint "点击返回港口"
+        
+        // 资源说明界面，关闭
+    ElseIf CmpColorEx("636|505|A4BAC5,633|791|9CB6C5,575|800|C5CAD6,572|923|C6D7DE,348|990|9CB6BD,584|488|42A69C,466|511|EEEFF7,398|505|9CC2EF",0.9)=1 Then
+        TracePrint "资源生产界面"
+        Tap 188,598
+        TracePrint "点击关闭"
+        
+        // 主角信息界面，关闭
+    ElseIf CmpColorEx("600|1204|090C96,617|115|B47502,622|323|8B5605,564|135|A1B9C5,471|146|9FB8C2,160|579|3EEEF4",0.9)=1 Then 
+        TracePrint "信息界面"
+        Tap 613,1202
+        TracePrint "点击关闭"
+    Else
+        TracePrint "未知画面"
+        Delay 1000
+    End If
+    Rem 重新截图检测
+    ReleaseCapture
+    Delay 2000
+Loop
+
+ReleaseCapture 
+//取消屏幕缩放
+ResetScreenScale 
+
+//*************************************************************
+//子函数声明
+//*************************************************************
+Function sl大法(原因)
+    Select Case uiSL方式
+    Case 0
+        TracePrint "SL方式：", "重启游戏，", 原因
+        初次出征=True
+        KillApp "com.huanmeng.zhanjian2"
+        Delay 6000
+        RunApp "com.huanmeng.zhanjian2"
+        Delay 1000
+    Case 1
+        TracePrint "SL方式：","结束脚本，", 原因 
+        EndScript
+    End Select
+End Function
+
+Sub 开启保护模式()
+    TracePrint "开启保护模式"
+    Select Case ui保护方法
+    Case 0
+        Call 开启远征模式()
+    Case 1
+        TracePrint "结束脚本"
+        EndScript
+    End Select
+End Sub
+
+Sub 开启远征模式()
+    If ui脚本模式 = 1 Then 
+        TracePrint "当前模式为远征模式,未更改"
+    Else 
+        ui脚本模式 = 1
+        上次检测出征 = Time()
+        上次检测修船 = Time()
+        TracePrint "当前模式改为远征模式"
+        ShowMessage "开启远征模式"
+    End If 
+End Sub
+
+Sub 显示统计信息()
+    ShowMessage "本次战斗次数：" & CStr(战斗计数) & " \n今天战斗次数：" & CStr(count_today + 战斗计数 - count_yesterday) & " \n快修使用次数：" & CStr(count快修)
+    TracePrint "本次战斗次数：" & CStr(战斗计数) & " 今天战斗次数：" & CStr(count_today + 战斗计数 - count_yesterday) & " 快修使用次数：" & CStr(count快修)
+End Sub
+
+Sub 记录当天战斗次数()
+    日期=DateTime.Format("%Y-%m-%d")
+    If 日期 <> ReadConfig("日期", "") Then 
+        WriteConfig "日期", 日期, True
+        count_yesterday = 战斗计数
+        count_today=0
+    End If
+    WriteConfig "战斗次数", (count_today + 战斗计数 - count_yesterday), True
+End Sub
+
+Function 读取当天战斗次数()
+    日期=DateTime.Format("%Y-%m-%d")
+    If 日期 = ReadConfig("日期", "") Then 
+        读取当天战斗次数 = ReadConfig("战斗次数", 0)
+    Else 
+        读取当天战斗次数 = 0
+    End If
+End Function
