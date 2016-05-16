@@ -27,7 +27,7 @@ TracePrint "uiMode=" & uiMode
 // --------- test area -------------
 //selectYuanZhengGroup()
 //EndScript
-
+//
 
 //-------------主循环------------
 If uiMode = 0 Then 
@@ -60,7 +60,7 @@ Function execYuanZheng()
         If CmpColorEx("599|954|3949D6,498|975|5AAAEF,600|1030|4A59D6,582|1055|FFFFFF,372|1071|7B6D19,351|824|DEB631", 0.9)=1 Then 
             TracePrint "发现远征完成"
             Tap 492, 956
-            Delay 3000
+            Delay 5000
             
             Dim yuanX, yuanY
             
@@ -75,15 +75,18 @@ Function execYuanZheng()
                 
                 //远征确认画面
                 Tap 70 + rand(30), 1030 + rand(50)
-                Delay 2000
+                Delay 3000
                 
-                //返回远征画面，开始新的远征
+                //返回远征画面，选择新的远征
                 Tap yuanX + rand(30), yuanY + rand(180)
                 Delay 2000
                 
                 //远征准备画面
                 TracePrint "准备远征"
-                selectYuanZhengGroup()
+                selectYuanZhengGroup 
+                
+                //返回主画面
+                Tap 45 + rand(5), 45+rand(5)
             Else 
                 TracePrint "Bug：应有远征"
                 ShowMessage "Bug：应有远征"
@@ -101,20 +104,24 @@ End Function
 
 Function selectYuanZhengGroup()
     //从4号舰队开始往前，看是否能远征
+    Tap 225 + rand(10), 840+rand(10)
     For i = 0 To 3
         intx = 225 + rand(10)
         inty = 840 + rand(10) - 126 * i
         TracePrint intx & ", " & inty
         Tap intx, inty
-        Delay 2000
-                	
-        If CmpColorEx("82|608|008CEF,83|623|008EF2,92|634|008EF3", 0.9) = 0 Then 
+        Delay 3000
+
+		KeepCapture                	
+        If CmpColorEx("82|608|008CEF-101010,83|623|008EF2-101010,92|634|008EF3-101010", 0.9) = 0 Then 
             TracePrint "舰队" &(4-i) & "不能出征"
+            ReleaseCapture
         Else 
             //可以出征
             TracePrint "舰队" & (4-i) & "可以出征"
             Tap 45 + rand(25), 520 + rand(250)
-            Delay 2000
+            Delay 3000
+            ReleaseCapture
             Exit For
         End If
     Next
