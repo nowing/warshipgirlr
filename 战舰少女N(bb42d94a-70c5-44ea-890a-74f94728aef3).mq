@@ -60,7 +60,7 @@ Function execYuanZheng()
         If CmpColorEx("599|954|3949D6,498|975|5AAAEF,600|1030|4A59D6,582|1055|FFFFFF,372|1071|7B6D19,351|824|DEB631", 0.9)=1 Then 
             TracePrint "发现远征完成"
             Tap 492, 956
-            Delay 5000
+            waitScreen("远征结果舰队")
             
             Dim yuanX, yuanY
             
@@ -71,21 +71,23 @@ Function execYuanZheng()
                 yuanX = intX
                 yuanY = intY
                 Tap yuanX + rand(30), yuanY + rand(180)
-                Delay 3000
                 
                 //远征确认画面
+                waitScreen("远征结果资源")
                 Tap 70 + rand(30), 1030 + rand(50)
-                Delay 3000
                 
                 //返回远征画面，选择新的远征
+                waitScreen("选择远征目标")
                 Tap yuanX + rand(30), yuanY + rand(180)
                 Delay 2000
                 
                 //远征准备画面
+                waitScreen("选择远征舰队")
                 TracePrint "准备远征"
                 selectYuanZhengGroup 
                 
                 //返回主画面
+                waitScreen("主画面")
                 Tap 45 + rand(5), 45+rand(5)
             Else 
                 TracePrint "Bug：应有远征"
@@ -104,30 +106,76 @@ End Function
 
 Function selectYuanZhengGroup()
     //从4号舰队开始往前，看是否能远征
-    Tap 225 + rand(10), 840+rand(10)
+    Tap 225 + rand(10), 840 + rand(10)
+    Delay 2000
+    
     For i = 0 To 3
         intx = 225 + rand(10)
         inty = 840 + rand(10) - 126 * i
         TracePrint intx & ", " & inty
         Tap intx, inty
-        Delay 3000
+        Delay 2000
 
-		KeepCapture                	
         If CmpColorEx("82|608|008CEF-101010,83|623|008EF2-101010,92|634|008EF3-101010", 0.9) = 0 Then 
             TracePrint "舰队" &(4-i) & "不能出征"
-            ReleaseCapture
         Else 
             //可以出征
             TracePrint "舰队" & (4-i) & "可以出征"
             Tap 45 + rand(25), 520 + rand(250)
-            Delay 3000
-            ReleaseCapture
+            
+            waitScreen "选择远征目标"
             Exit For
         End If
     Next
 
 End Function
 
+//确认画面是否正常显示，如未显示则等待1秒
+Function waitScreen(sName)
+    Delay 2000
+    Dim waitOk = false
+    Dim timeout = 0
+    TracePrint "等待画面(" &sName &")"
+    While not waitOk
+    	If timeout > 120 Then 
+    		TracePrint "等待画面(" &sName &")超时，或判断画面有误？"
+    	End If
+    	
+        If sName = "远征结果舰队" Then 
+            If CmpColorEx("433|29|044AAF,482|68|3F89EE,712|319|656B6E,674|380|BC7500,630|347|C1CCD3", 0.9) Then 
+                waitOk = true
+            End If
+        ElseIf sName = "远征结果资源" then
+            If CmpColorEx("486|496|925908,444|856|FDFDFD-101010,461|914|FBFBFB-101010,482|980|F7F7F7-101010,441|1043|F8F8F8-101010,432|1087|FFFFFF-101010", 0.9) Then 
+                waitOk = true
+            End If
+        ElseIf sName = "选择远征目标" Then
+			If CmpColorEx("430|23|054AAC,434|46|034AB0,479|119|3A86EA,665|523|BF7A00,631|539|C1CCD3", 0.9) Then 
+				waitOk = true
+			End If
+		ElseIf sName = "主画面" Then
+			If CmpColorEx("713|45|9F6E28,15|86|0549AA,39|1261|F7F4F1,675|1263|024BB3,709|494|808080", 0.9) Then 
+				waitOk = true
+			End If
+		ElseIf sName = "选择远征舰队" then
+			If CmpColorEx("648|81|FFFFFF,539|126|9FB6C4,635|181|FFFFFF,633|211|FFFFFF,641|233|B57307,676|748|375BB9,571|1185|176183", 0.9) Then 
+				waitOk = true
+			End If
+		
+        Else 
+            TracePrint "waitScreen(" &sName &")未定义"
+            ShowMessage "waitScreen(" &sName &")未定义"
+
+        End If
+
+        Delay 1000
+        timeout = timeout + 1
+    Wend
+	
+	
+End Function
+
+//随机数
 Function rand(x)
     rand=randxy(0,x)
 End Function
