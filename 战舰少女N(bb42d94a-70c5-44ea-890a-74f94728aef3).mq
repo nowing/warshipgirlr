@@ -22,12 +22,20 @@ Log.Open
 Dim uiMode = ReadUIConfig("cfgMode",0)            //0.出征 1.演习 2.6-1A
 TracePrint "uiMode=" & uiMode
 
+//出征血量检查
+Dim hpGreen = "19DC15"
+Dim hpYellow = "078BB9" 
+Dim hpRed = "0808BA"
+
+
+Dim needSelectMap = true
 
 //辅助变量
 
 // --------- test area -------------
-//selectYuanZhengGroup()
-//EndScript
+delay 5000
+selectMap 5,0
+EndScript
 //
 
 //-------------主循环------------
@@ -61,6 +69,94 @@ Function exec61SS
 	
 End Function
 
+//选择地图，下标0开始
+Function selectMap(mainMap, subMap)
+    TracePrint "进入出征选图界面"
+    If needSelectMap Then 
+        Delay 1000 //防止卡顿出现选错图
+        Select Case mainMap
+        Case 0 //第一章
+            Swipe 55, 350, 55, 1170
+            Delay 1000
+            Tap 67, 755
+            Delay 500
+            Tap 61,465
+            Delay 500
+        Case 1 //第二章
+            Swipe 55, 350, 55, 1170
+            Delay 1000
+            Tap 61,465
+            Delay 500
+            Tap 67, 755
+            Delay 500
+        Case 2 //第三章
+            Swipe 55, 350, 55, 1170
+            Delay 1000
+            Tap 67, 755
+            Delay 500
+            Tap 69,1083
+            Delay 500
+        Case 3 //第四章
+            Swipe 55, 1070, 55, 50
+            Delay 1000
+            Tap 65,689
+            Delay 500
+            Tap 70,357
+            Delay 500
+        Case 4 //第五章
+            Swipe 55, 1070, 55, 50
+            Delay 1000
+            Tap 70,357
+            Delay 500
+            Tap 65, 689
+            Delay 500
+        Case 5 //第六章
+            Swipe 55, 1070, 55, 50
+            Delay 1000
+            Tap 65,689
+            Delay 500
+            Tap 65, 1001
+            Delay 500
+        End Select
+            
+        Select Case subMap
+        Case 0
+            Tap 378, 656
+        Case 1
+            Swipe 377, 983, 377, 483
+            Delay 500
+            Tap 378, 656
+        Case 2
+            Swipe 377, 983, 377, 483
+            Delay 500
+            Swipe 377, 983, 377, 483
+            Delay 500
+            Tap 378, 656
+        Case 3
+            Swipe 377, 983, 377, 483
+            Delay 500
+            Swipe 377, 983, 377, 483
+            Delay 500
+            Swipe 377, 983, 377, 483
+            Delay 500
+            Tap 378, 656
+        Case 4
+            Swipe 377, 983, 377, 483
+            Delay 500
+            Swipe 377, 983, 377, 483
+            Delay 500
+            Swipe 377, 983, 377, 483
+            Delay 500
+            Swipe 377, 983, 377, 483
+            Delay 500
+            Tap 378, 656
+        End Select
+        needSelectMap = False
+    Else 
+        Tap 378, 656
+        TracePrint "点击进入出征准备"
+    End If
+End Function
 
 //开始演习循环
 Function execYanxi()
@@ -122,9 +218,8 @@ Function execYuanZheng()
 	
 End Function
 
-
+// 主画面发现任务完成
 Function checkQuest
-    TracePrint "check quest"
     If CmpColorEx("64|593|020EC5,64|614|0208D9,63|603|011957,67|605|239FD3,64|585|D3D3D3", 0.9) = 1 Then 
         TracePrint "发现完成任务"
 		
@@ -148,8 +243,7 @@ Function checkQuest
         waitScreen ("主画面")
     End If
 		
-Wend
-    
+  
 End Function
 
 Function selectYuanZhengGroup()
@@ -164,7 +258,7 @@ Function selectYuanZhengGroup()
         Tap intx, inty   //点击第i舰队
         Delay 2000
 
-        If CmpColorEx("82|608|008CEF-101010,83|623|008EF2-101010,92|634|008EF3-101010", 0.9) = 0 Then 
+        If CmpColorEx("28|527|008EF3-101010,28|593|008EF3-101010,26|725|008EF3-101010,87|630|008EF3-101010", 0.9) = 0 Then 
             TracePrint "舰队" &(4-i) & "不能出征"
         Else 
             //可以出征
@@ -215,6 +309,11 @@ Function waitScreen(sName)
             End If
         ElseIf sName = "任务奖励" Then
             If CmpColorEx("535|374|FFFFFF-101010,511|485|945F11-101010,243|480|9FB6C4-101010,258|636|F1CD43-101010,228|633|C39200-101010", 0.9) = 1 Then 
+                waitOk = true
+            End If
+            
+        ElseIf sName = "出征选地图" Then
+            If CmpColorEx("632|58|4A4110,636|88|D6D3C6,625|83|0049B5,625|122|003583,520|113|BD8E00,442|117|C59600,366|69|EEC242,366|23|4A4108,477|23|AD9129,115|42|3A353A", 0.9) = 1 Then 
                 waitOk = true
             End If
         Else 
