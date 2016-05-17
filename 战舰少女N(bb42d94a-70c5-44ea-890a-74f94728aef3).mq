@@ -25,6 +25,9 @@ TracePrint "uiMode=" & uiMode
 Dim uiShape = ReadUIConfig("cfgShape", 0)  //阵型
 TracePrint "uiShape=" & uiShape
 
+Dim uiNight = ReadUIConfig("cfgNight", 0)  //是否夜战
+TracePrint "uiNight=" & uiNight
+
 //出征血量检查
 Dim hpGreen = "19DC15"
 Dim hpYellow = "078BB9" 
@@ -178,46 +181,100 @@ Function execYanxi()
 	
     Tap 540 + rand(20), 40 + rand(10) //点击演习
     TracePrint "点击演习"
-    waitScreen("选择演习对手")
 	
     Dim bSelectFleet = true  //演习对手
-    Dim bSelectShape = false //战斗阵型画面
     While bSelectFleet
-        FindMultiColor 0, 0, 0, 0, "024BB4", "35|-3|3985E9,-1|131|024BB3,33|129|3582E7", 0, 0.9, intX, intY
+        waitScreen("选择演习对手")
+        FindMultiColor 0, 0, 0, 0, "024BB4-101010", "35|-3|3985E9-101010,-1|131|024BB3-101010,33|129|3582E7-101010", 0, 0.9, intX, intY
+        TracePrint intX, intY
         If intX > -1 Then 
+            TracePrint "找到对手"
             Tap intX + rand(10), intY + rand(10)  //点击对手
             waitScreen ("出征准备")
             
-            Tap 40, 640 //点击出征
-            
-            //等待索敌成功
-            While not bSelectShape
-                If CmpColorEx("461|213|0909BA-101010,460|250|1818C7-101010,461|303|3535E1-101010,462|341|4747F1-101010,125|876|054AAC-101010", 0.9) = 1 Then 
-                    //索敌成功
-                    bSelectShape = true
-            		
-                    Tap 140 + rand(10), 830 + rand(50) //点击开始战斗
-                    waitScreen ("选择战斗阵型")
-                ElseIf CmpColorEx("639|833|824F06-101010,646|1005|82D86F-101010,617|1057|41C335-101010,313|991|CCCCCC-101010,312|1057|2F2D26-101010", 0.9) = 1 Then
-                    //索敌失败，直接进入选择战斗阵型
-                    bSelectShape = true
-				
-                End If
-            Wend
-            
-            
-            
-            While true
-                Delay 5000
-            Wend
-            
+            doBattle
+        Else 
+            TracePrint "找不到对手"
+            bSelectFleet = false
         End If
-		
     Wend
+    
+    //返回主画面
+    returnMain 
+    
+    //开始远征
+    execYuanZheng
 	
 End Function
 
+//1次战斗：从索敌开始，到经验画面
+Function doBattle
+    Dim bSelectShape = false //战斗阵型画面
+    Dim inBattle = true //战斗标识
 
+    Tap 40, 640 //点击出征
+            
+    //等待索敌
+    While not bSelectShape
+        If CmpColorEx("461|213|0909BA-101010,460|250|1818C7-101010,461|303|3535E1-101010,462|341|4747F1-101010,125|876|054AAC-101010", 0.9) = 1 Then 
+            //索敌成功
+            bSelectShape = true
+            		
+            Tap 140 + rand(10), 830 + rand(50) //点击开始战斗
+            waitScreen ("选择战斗阵型")
+        ElseIf CmpColorEx("639|833|824F06-101010,646|1005|82D86F-101010,617|1057|41C335-101010,313|991|CCCCCC-101010,312|1057|2F2D26-101010", 0.9) = 1 Then
+            //索敌失败，直接进入选择战斗阵型
+            bSelectShape = true
+        End If
+    Wend
+            
+    //选择阵型
+    Select Case uiShape
+    Case 0
+        Tap 600 + rand(50), 1000 + rand(50)
+    Case 1
+        Tap 460 + rand(50), 1100 + rand(50)
+    Case 2
+        Tap 330 + rand(50), 1150 + rand(50)
+    Case 3
+        Tap 200 + rand(50), 1100 + rand(50)
+    Case 4
+        Tap 70 + rand(50), 1000 + rand(50)
+    End Select
+            
+    // 现在进入战斗画面，等待夜战或战斗结果结算画面
+    i=0
+    While inBattle
+        Delay 5000
+        i=i+1
+        ShowMessage "战斗中：" & i
+        TracePrint "战斗中：" & i
+		
+        If CmpColorEx("640|188|88530D,537|447|A0B7C5-101010,102|961|CCCCCC,74|1133|824E05", 0.9) = 1 Then 
+            TracePrint "战斗结束"
+            Tap 100 + rand(100), 1000 + rand(100)
+            waitScreen("战斗经验")
+			
+            TracePrint "战斗经验"
+            Tap 40 + rand(10), 1100 + rand(200)
+            
+            inBattle = false
+        ElseIf CmpColorEx("348|435|3481E6,361|421|3062A9,307|568|024BB4,294|593|043376,416|689|F1CC43,373|805|C39200,428|670|AB9330,362|841|856200", 0.9) = 1 Then
+            //选择是否夜战
+            If uiNight = 1 Then 
+                //夜战
+                TracePrint "开始夜战"
+                Tap 310 + rand(30), 460 + rand(80)
+            Else 
+                //不夜战
+                TracePrint "拒绝夜战"
+                Tap 380 + rand(30), 710 + rand(80)
+                inBattle = false
+            End If
+        End If
+    Wend
+
+End Function
 
 
 //开始远征循环
@@ -279,8 +336,7 @@ Function execYuanZheng()
 
                 
                 //返回主画面
-                Tap 45 + rand(5), 45+rand(5)  //点击港口
-                waitScreen("主画面")
+                returnMain
             Else 
                 TracePrint "Bug：应有远征"
                 ShowMessage "Bug：应有远征"
@@ -293,6 +349,12 @@ Function execYuanZheng()
     Wend
 	
 	
+End Function
+
+//返回主画面
+Function returnMain()
+    Tap 45 + rand(5), 45+rand(5)  //点击港口
+    waitScreen("主画面")
 End Function
 
 // 主画面发现任务完成
@@ -327,7 +389,7 @@ End Function
 
 //确认画面是否正常显示，如未显示则等待1秒
 Function waitScreen(sName)
-    Delay 1000
+    Delay 1000 + rand(500)
     Dim waitOk = false
     Dim timeout = 0
     TracePrint "等待画面(" &sName &")"
@@ -336,7 +398,7 @@ Function waitScreen(sName)
             TracePrint "等待画面(" &sName &")超时，或判断画面有误？"
         End If
     	
-        KeepCapture
+        
         If sName = "远征结果资源" then
             If CmpColorEx("694|69|BC8C27-101010,655|233|89530E-101010,700|745|8B5408-101010,691|1110|644124-101010,65|1122|7F4C04-101010", 0.9) = 1 Then 
                 waitOk = true
@@ -377,12 +439,16 @@ Function waitScreen(sName)
             If CmpColorEx("639|833|824F06-101010,646|1005|82D86F-101010,617|1057|41C335-101010,313|991|CCCCCC-101010,312|1057|2F2D26-101010", 0.9) = 1 Then 
                 waitOk = true
             End If
+        ElseIf sName = "战斗经验" Then
+            If CmpColorEx("650|123|86510B,652|441|DEB434,78|1155|F2CE44,56|1123|FFFFFF,60|1177|FFFFFF", 0.9) = 1 Then 
+                waitOk = true
+            End If
         Else 
             TracePrint "waitScreen(" &sName &")未定义"
             ShowMessage "waitScreen(" &sName &")未定义"
 
         End If
-        ReleaseCapture 
+         
 		
         Delay 1000
         timeout = timeout + 1
