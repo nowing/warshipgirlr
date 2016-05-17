@@ -33,9 +33,9 @@ Dim needSelectMap = true
 //辅助变量
 
 // --------- test area -------------
-delay 5000
-selectMap 5,0
-EndScript
+//delay 5000
+//selectMap 5,0
+//EndScript
 //
 
 //-------------主循环------------
@@ -160,6 +160,9 @@ End Function
 
 //开始演习循环
 Function execYanxi()
+    If CmpColorEx("504|986|1055AD,227|970|7B7510,331|1116|E6EB6B,277|838|8C6500,572|1253|FFFBF7,34|71|010909,21|274|3A2D11,7|635|ACA59B", 0.9) = 1 Then 
+        TracePrint "进入主界面"
+    end if 
 	
 End Function
 
@@ -175,7 +178,7 @@ Function execYuanZheng()
         If CmpColorEx("599|954|3949D6,498|975|5AAAEF,600|1030|4A59D6,582|1055|FFFFFF,372|1071|7B6D19,351|824|DEB631", 0.9)=1 Then 
             TracePrint "发现远征完成"
             Tap 490 + rand(30), 900 + rand(100) //点击出征
-            waitScreen("远征结果目标")
+            waitScreen("选择远征目标")
             
             Dim yuanX, yuanY
             
@@ -198,8 +201,29 @@ Function execYuanZheng()
                 
                 //远征准备画面
                 waitScreen("选择远征舰队")
-                TracePrint "准备远征"
-                selectYuanZhengGroup 
+                //从4号舰队开始往前，看是否能远征
+                Tap 225 + rand(10), 840 + rand(10)  //点击第4舰队
+                Delay 2000
+    
+                For i = 0 To 3
+                    intx = 225 + rand(10)
+                    inty = 840 + rand(10) - 126 * i
+
+                    Tap intx, inty   //点击第i舰队
+                    Delay 2000
+
+                    If CmpColorEx("28|527|008EF3-101010,28|593|008EF3-101010,26|725|008EF3-101010,87|630|008EF3-101010", 0.9) = 0 Then 
+                        TracePrint "舰队" &(4-i) & "不能出征"
+                    Else 
+                        //可以出征
+                        TracePrint "舰队" & (4-i) & "可以出征"
+                        Tap 45 + rand(25), 520 + rand(250)   //点击出征
+            
+                        waitScreen "选择远征目标"
+                        Exit For
+                    End If
+                Next
+
                 
                 //返回主画面
                 Tap 45 + rand(5), 45+rand(5)  //点击港口
@@ -246,31 +270,7 @@ Function checkQuest
   
 End Function
 
-Function selectYuanZhengGroup()
-    //从4号舰队开始往前，看是否能远征
-    Tap 225 + rand(10), 840 + rand(10)  //点击第4舰队
-    Delay 2000
-    
-    For i = 0 To 3
-        intx = 225 + rand(10)
-        inty = 840 + rand(10) - 126 * i
 
-        Tap intx, inty   //点击第i舰队
-        Delay 2000
-
-        If CmpColorEx("28|527|008EF3-101010,28|593|008EF3-101010,26|725|008EF3-101010,87|630|008EF3-101010", 0.9) = 0 Then 
-            TracePrint "舰队" &(4-i) & "不能出征"
-        Else 
-            //可以出征
-            TracePrint "舰队" & (4-i) & "可以出征"
-            Tap 45 + rand(25), 520 + rand(250)   //点击出征
-            
-            waitScreen "选择远征目标"
-            Exit For
-        End If
-    Next
-
-End Function
 
 //确认画面是否正常显示，如未显示则等待1秒
 Function waitScreen(sName)
@@ -279,20 +279,16 @@ Function waitScreen(sName)
     Dim timeout = 0
     TracePrint "等待画面(" &sName &")"
     While not waitOk
-        If timeout > 120 Then 
+        If timeout > 60 Then 
             TracePrint "等待画面(" &sName &")超时，或判断画面有误？"
         End If
     	
-        If sName = "远征结果目标" Then 
-            If CmpColorEx("432|23|044AAE-101010,483|65|408AEF-101010,593|256|C1CCD3-101010,410|358|63686C-101010", 0.9) = 1 Then 
-                waitOk = true
-            End If
-        ElseIf sName = "远征结果资源" then
-            If CmpColorEx("486|496|925908,444|856|FDFDFD-101010,461|914|FBFBFB-101010,482|980|F7F7F7-101010,441|1043|F8F8F8-101010,432|1087|FFFFFF-101010", 0.9) = 1 Then 
+        If sName = "远征结果资源" then
+            If CmpColorEx("694|69|BC8C27-101010,655|233|89530E-101010,700|745|8B5408-101010,691|1110|644124-101010,65|1122|7F4C04-101010", 0.9) = 1 Then 
                 waitOk = true
             End If
         ElseIf sName = "选择远征目标" Then
-            If CmpColorEx("430|23|054AAC,434|46|034AB0-101010,479|119|3A86EA-101010,665|523|BF7A00-101010,631|539|C1CCD3-101010", 0.9) = 1 Then 
+            If CmpColorEx("619|67|C08E00,526|69|C08E00,433|68|044AAF,337|66|C08E00", 0.9) = 1 Then 
                 waitOk = true
             End If
         ElseIf sName = "主画面" Then
@@ -300,7 +296,7 @@ Function waitScreen(sName)
                 waitOk = true
             End If
         ElseIf sName = "选择远征舰队" then
-            If CmpColorEx("648|81|FFFFFF,539|126|9FB6C4-101010,635|181|FFFFFF-101010,633|211|FFFFFF-101010,641|233|B57307-101010,676|748|375BB9-101010,571|1185|176183-101010", 0.9) = 1 Then 
+            If CmpColorEx("648|81|FFFFFF-101010,539|126|9FB6C4-101010,635|181|FFFFFF-101010,633|211|FFFFFF-101010,641|233|B57307-101010,676|748|375BB9-101010,571|1185|176183-101010", 0.9) = 1 Then 
                 waitOk = true
             End If
         ElseIf sName = "任务完成列表" Then
