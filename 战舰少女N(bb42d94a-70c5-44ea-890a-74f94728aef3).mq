@@ -19,31 +19,33 @@ SetScreenScale 720, 1280
 Log.Open
 
 //获取UI界面设置参数
-Dim uiMode = ReadUIConfig("cfgMode",0)     //模式
+Dim uiMode = ReadUIConfig("cfgMode",0)     //模式 0：远征 1：演习 2：6-1打SS 3：6-1躲CV
 TracePrint "uiMode=" & uiMode
 
-Dim uiShape = ReadUIConfig("cfgShape", 0)  //阵型
+Dim uiShape = ReadUIConfig("cfgShape", 0)  //阵型 0：单纵 1：复纵 2：轮型 3：梯形 4：单横
 TracePrint "uiShape=" & uiShape
 
-Dim uiNight = ReadUIConfig("cfgNight", 0)  //是否夜战
+Dim uiNight = ReadUIConfig("cfgNight", 0)  //是否夜战 0：不夜战 1：夜战
 TracePrint "uiNight=" & uiNight
 
-//出征血量检查
-Dim hpGreen = "19DC15"
-Dim hpYellow = "078BB9" 
-Dim hpRed = "0808BA"
+Dim uiRepire = ReadUIConfig("cfgRepire", 0) //修理种类 0：大破 1：大破+中破
 
-
-Dim needSelectMap = true
-
-//辅助变量
 
 // --------- test area -------------
 //RunApp "com.huanmeng.zhanjian2"
-//
+uiMode = 2
+uiRepire = 1
+
 //EndScript
 //
 
+//变量整理
+If uiMode = 2 or uiMode = 3 Then 
+    uiShape = 4
+End If
+
+
+Dim needSelectMap = true
 
 // ----------检测每天初次启动---------------
 checkEverydayBounce
@@ -95,31 +97,104 @@ Function exec61
     selectMap 5, 0
     TracePrint "选择好6-1"
 	
-    supplyAll 
-	
     checkQuickRepire
-	
+
+    supplyAll 
+
 
 End Function
 
 //出征准备界面快速修理
 Function checkQuickRepire()
+    Dim findYellow = false
+    Dim findRed = false
 	
+    For i = 1 To 10
+        FindColor 316,316,321,1083, "0707BF|0B0CE4", 0, 0.9, intX, intY
+        If intX > -1 Then 
+            TracePrint "找到大破", intX, intY, i
+            findRed = true
+            Exit For
+        End If
+        Delay 500
+    Next
+
+    If uiRepire = 1 then //需修中破
+        For i = 1 To 10
+            FindColor 316,316,321,1083,"0BCEE2|0794BE", 0, 0.9, intX, intY
+            If intX > -1 Then 
+                TracePrint "找到中破", intX, intY, i
+                findYellow = true
+                Exit for
+            End If
+            Delay 500
+        Next
+    End if
+	
+    If findYellow or findRed Then 
+        //开始快速修理
+        Tap 530 + rand(20), 1190 + rand(20)
+        waitScreen ("快速修理")
+		
+        //先修大破
+        temp = 0
+        While true
+            FindColor 302, 184, 308, 952, "0A0AE4|0707BD", 0, 0.9, intX, intY  //找大破
+            If intX = -1 Then 
+                temp = temp + 1
+                If temp > 9 Then 
+                    Exit While
+                End If
+                Delay 200 
+            Else 
+                TracePrint "快速修理大破：", intX, intY, temp
+                temp = 0
+                
+                Tap intX + 100 + rand(20), intY + 20 + rand(20)
+                Delay 1000
+            End If
+			
+        Wend
+        
+        If uiRepire = 1 Then 
+            //中破也修
+            temp = 0
+            While true
+                FindColor 302, 184, 308, 952, "0AD7E7|0795BF", 0, 0.9, intX, intY  //找大破
+                If intX = -1 Then 
+                    temp = temp + 1
+                    If temp > 9 Then 
+                        Exit While
+                    End If
+                    Delay 200 
+                Else 
+                    TracePrint "快速修理中破：", intX, intY, temp
+                    temp = 0
+
+                    Tap intX + 100 + rand(20), intY + 20 + rand(20)
+                    Delay 1000
+                End If
+			
+            Wend
+        End If
+    End If
+
+	Tap 580 + rand(20), 970 + rand(20)
+	waitScreen("出征准备")
 End Function
 
 
 //出征准备界面补给全部
 Function supplyAll()
-    FindColor 394,308,428,1090,"17199D",0,0.9,intX, intY
+    FindColor 393,303,430,954, "2F35C5|3E46D3|2D32C3|3B42D1|2D32C1|383ECF" ,0, 0.9, intX, intY
     If intX > -1 Then 
         TracePrint "需要补给"
-        Tap 640 + rand(10), 1190 + rand(20)
+        Tap 640 + rand(10), 1190 + rand(10)
         waitScreen("开始补给")
 		
-		Tap 180 + rand(20), 800 + rand(100)
-		waitScreen("出征准备")
+        Tap 180 + rand(20), 800 + rand(100)
+        waitScreen("出征准备")
     End If	
-	
 End Function
 
 //选择地图，下标0开始
@@ -319,76 +394,80 @@ End Function
 //开始远征循环
 Function execYuanZheng()
     If CmpColorEx("504|986|1055AD,227|970|7B7510,331|1116|E6EB6B,277|838|8C6500,572|1253|FFFBF7,34|71|010909,21|274|3A2D11,7|635|ACA59B", 0.9) = 1 Then 
-        TracePrint "进入主界面"
+        TracePrint "进入主界面，等待远征"
     end if 
 	
     While True
-        checkQuest
-        If CmpColorEx("599|954|3949D6,498|975|5AAAEF,600|1030|4A59D6,582|1055|FFFFFF,372|1071|7B6D19,351|824|DEB631", 0.9)=1 Then 
-            TracePrint "发现远征完成"
-            Tap 490 + rand(30), 900 + rand(100) //点击出征
-            waitScreen("选择远征目标")
-            
-            Dim yuanX, yuanY
-            
-            //查找4行中哪一行成功
-            FindMultiColor 158,1018,662,1212,"054AAC","9|-1|014CB6,2|12|044AAD,13|11|004DBB", 0, 0.9, intX, intY
-            If intX > -1 Then 
-                TracePrint "找到远征成功:" & intX & "," & intY
-                yuanX = intX
-                yuanY = intY
-                Tap yuanX + rand(30), yuanY + rand(180)  //点击成功
-                
-                //远征确认画面
-                waitScreen("远征结果资源")
-                Tap 70 + rand(30), 1030 + rand(50)  //点击确定
-                
-                //返回远征画面，选择新的远征
-                waitScreen("选择远征目标")
-                Tap yuanX + rand(30), yuanY + rand(180)  //点击原出征
-                Delay 2000
-                
-                //远征准备画面
-                waitScreen("选择远征舰队")
-                //从4号舰队开始往前，看是否能远征
-                Tap 225 + rand(10), 840 + rand(10)  //点击第4舰队
-                Delay 2000
-    
-                For i = 0 To 3
-                    intx = 225 + rand(10)
-                    inty = 840 + rand(10) - 126 * i
-
-                    Tap intx, inty   //点击第i舰队
-                    Delay 2000
-
-                    If CmpColorEx("28|527|008EF3-101010,28|593|008EF3-101010,26|725|008EF3-101010,87|630|008EF3-101010", 0.9) = 0 Then 
-                        TracePrint "舰队" &(4-i) & "不能出征"
-                    Else 
-                        //可以出征
-                        TracePrint "舰队" & (4-i) & "可以出征"
-                        Tap 45 + rand(25), 520 + rand(250)   //点击出征
-            
-                        waitScreen "选择远征目标"
-                        Exit For
-                    End If
-                Next
-
-                
-                //返回主画面
-                returnMain
-            Else 
-                TracePrint "Bug：应有远征"
-                ShowMessage "Bug：应有远征"
-                EndScript
-                
-            End If
-            
-            Delay 5000
-        End if
+        checkQuest 
+        checkYuanZheng 
+        Delay 5000
     Wend
 	
-	
 End Function
+
+//检查远征，如有，收获远征
+Function checkYuanZheng()
+    If CmpColorEx("599|954|3949D6,498|975|5AAAEF,600|1030|4A59D6,582|1055|FFFFFF,372|1071|7B6D19,351|824|DEB631", 0.9)=1 Then 
+        TracePrint "发现远征完成"
+        Tap 490 + rand(30), 900 + rand(100) //点击出征
+        waitScreen("选择远征目标")
+            
+        Dim yuanX, yuanY
+            
+        //查找4行中哪一行成功
+        FindMultiColor 158,1018,662,1212,"054AAC","9|-1|014CB6,2|12|044AAD,13|11|004DBB", 0, 0.9, intX, intY
+        If intX > -1 Then 
+            TracePrint "找到远征成功:" & intX & "," & intY
+            yuanX = intX
+            yuanY = intY
+            Tap yuanX + rand(30), yuanY + rand(180)  //点击成功
+                
+            //远征确认画面
+            waitScreen("远征结果资源")
+            Tap 70 + rand(30), 1030 + rand(50)  //点击确定
+                
+            //返回远征画面，选择新的远征
+            waitScreen("选择远征目标")
+            Tap yuanX + rand(30), yuanY + rand(180)  //点击原出征
+            Delay 2000
+                
+            //远征准备画面
+            waitScreen ("选择远征舰队")
+            
+            //从4号舰队开始往前，看是否能远征
+            Tap 225 + rand(10), 840 + rand(10)  //点击第4舰队
+            Delay 2000
+    
+            For i = 0 To 3
+                intx = 225 + rand(10)
+                inty = 840 + rand(10) - 126 * i
+
+                Tap intx, inty   //点击第i舰队
+                Delay 2000
+
+                If CmpColorEx("28|527|008EF3-101010,28|593|008EF3-101010,26|725|008EF3-101010,87|630|008EF3-101010", 0.9) = 0 Then 
+                    TracePrint "舰队" &(4-i) & "不能出征"
+                Else 
+                    //可以出征
+                    TracePrint "舰队" & (4-i) & "可以出征"
+                    Tap 45 + rand(25), 520 + rand(250)   //点击出征
+            
+                    waitScreen "选择远征目标"
+                    Exit For
+                End If
+            Next
+                
+            //返回主画面
+            returnMain
+        Else 
+            TracePrint "Bug：应有远征"
+            ShowMessage "Bug：应有远征"
+            EndScript
+                
+        End If
+    End if
+End Function
+
 
 //返回主画面
 Function returnMain()
@@ -445,7 +524,11 @@ Function waitScreen(sName)
         ElseIf sName = "开始补给" Then
             If CmpColorEx("555|403|C1CCD3,174|758|C18F00,210|932|F1CD43,578|983|0D0F9A", 0.9)= 1 then
                 waitOk = true
-            End if
+            End If
+        ElseIf sName = "快速修理" Then
+            If CmpColorEx("581|227|9A620F,176|758|C29100,210|933|F1CD43,574|983|090D97", 0.9) = 1 Then 
+                waitOk = true
+            End If
         ElseIf sName = "选择远征目标" Then
             If CmpColorEx("619|67|C08E00,526|69|C08E00,433|68|044AAF,337|66|C08E00", 0.9) = 1 Then 
                 waitOk = true
