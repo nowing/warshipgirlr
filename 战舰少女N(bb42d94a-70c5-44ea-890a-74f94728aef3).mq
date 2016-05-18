@@ -39,28 +39,36 @@ Dim needSelectMap = true
 //辅助变量
 
 // --------- test area -------------
-//delay 5000
-//selectMap 5,0
+//RunApp "com.huanmeng.zhanjian2"
 //EndScript
 //
+
+
+// ----------检测每天初次启动---------------
+checkEverydayBounce
+
 
 //-------------主循环------------
 If uiMode = 0 Then 
     ShowMessage "当前为远征模式"
     TracePrint "当前为远征模式"
-    execYuanZheng()
+    execYuanZheng 
+    
 ElseIf uiMode = 1 Then
     ShowMessage "准备演习"
     TracePrint "准备演习"
     execYanxi 
+    
 ElseIf uiMode = 2 Then
     ShowMessage "准备出征6-1A：只打SS"
     TracePrint "准备出征6-1A：只打SS"
-    exec61SS
+    exec61SS 
+    
 ElseIf uiMode = 3 Then
     ShowMessage "准备出征6-1A：不打CV"
     TracePrint "准备出征6-1A：不打CV"
-    exec61NoCV
+    exec61NoCV 
+    
 End If
 
 
@@ -256,7 +264,7 @@ Function doBattle
             waitScreen("战斗经验")
 			
             TracePrint "战斗经验"
-            Tap 40 + rand(10), 1100 + rand(200)
+            Tap 40 + rand(20), 1110 + rand(100)
             
             inBattle = false
         ElseIf CmpColorEx("348|435|3481E6,361|421|3062A9,307|568|024BB4,294|593|043376,416|689|F1CC43,373|805|C39200,428|670|AB9330,362|841|856200", 0.9) = 1 Then
@@ -480,4 +488,30 @@ Function checkScreenSize()
         EndScript
     End If
     
+End Function
+
+Function checkEverydayBounce()
+	TracePrint "每日公告/奖励"
+    //公告
+    If CmpColorEx("64|61|2C3F4A,689|106|885102,669|1251|080C97,72|1180|9FB6C4", 0.9) = 1 Then 
+        TracePrint "关闭公告"
+        Tap 70 + rand(5), 65 + rand(5)
+        Delay 1000  //左下角勾
+	
+        Tap 670 + rand(20), 1240 + rand(20)
+        Delay 2000
+    End If
+
+    //每日奖励
+    If CmpColorEx("120|556|034BB2,156|720|3884E9,653|1046|6BCEFB", 0.9) = 1 Then 
+        TracePrint "每日奖励"
+        Tap 120 + rand(20), 570 + rand(100)
+        Delay 2000
+	
+        Tap 220 + rand(20), 580 + rand(100)
+        Delay 1000
+	
+        Tap 640 + rand(5), 1035 + rand(5)
+        Delay 1000
+    End If
 End Function
