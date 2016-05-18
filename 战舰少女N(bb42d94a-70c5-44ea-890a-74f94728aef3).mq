@@ -40,6 +40,7 @@ Dim needSelectMap = true
 
 // --------- test area -------------
 //RunApp "com.huanmeng.zhanjian2"
+//
 //EndScript
 //
 
@@ -62,12 +63,12 @@ ElseIf uiMode = 1 Then
 ElseIf uiMode = 2 Then
     ShowMessage "准备出征6-1A：只打SS"
     TracePrint "准备出征6-1A：只打SS"
-    exec61SS 
+    exec61 
     
 ElseIf uiMode = 3 Then
     ShowMessage "准备出征6-1A：不打CV"
     TracePrint "准备出征6-1A：不打CV"
-    exec61NoCV 
+    exec61 
     
 End If
 
@@ -75,104 +76,134 @@ End If
 
 
 //---------- 函数 ----------------
-//6-1不打CV
-Function exec61NoCV
+//6-1
+Function exec61
+    If CmpColorEx("504|986|1055AD,227|970|7B7510,331|1116|E6EB6B,277|838|8C6500,572|1253|FFFBF7,34|71|010909,21|274|3A2D11,7|635|ACA59B", 0.9) = 1 Then 
+        TracePrint "进入主界面"
+    End If
+    
+    checkQuest
+	
+    Tap 460 + rand(20), 930 + rand(20) //点击出征
+    TracePrint "点击主画面出征"
+    Delay 2000
+
+    Tap 630 + rand(10), 25 + rand(10)
+    TracePrint "点击出征"
+    Delay 2000
+	
+    selectMap 5, 0
+    TracePrint "选择好6-1"
+	
+    supplyAll 
+	
+    checkQuickRepire
+	
+
+End Function
+
+//出征准备界面快速修理
+Function checkQuickRepire()
 	
 End Function
 
 
-//6-1只打SS
-Function exec61SS
+//出征准备界面补给全部
+Function supplyAll()
+    FindColor 394,308,428,1090,"17199D",0,0.9,intX, intY
+    If intX > -1 Then 
+        TracePrint "需要补给"
+        Tap 640 + rand(10), 1190 + rand(20)
+        waitScreen("开始补给")
+		
+		Tap 180 + rand(20), 800 + rand(100)
+		waitScreen("出征准备")
+    End If	
 	
 End Function
 
 //选择地图，下标0开始
 Function selectMap(mainMap, subMap)
     TracePrint "进入出征选图界面"
-    If needSelectMap Then 
-        Delay 1000 //防止卡顿出现选错图
-        Select Case mainMap
-        Case 0 //第一章
-            Swipe 55, 350, 55, 1170
-            Delay 1000
-            Tap 67, 755
-            Delay 500
-            Tap 61,465
-            Delay 500
-        Case 1 //第二章
-            Swipe 55, 350, 55, 1170
-            Delay 1000
-            Tap 61,465
-            Delay 500
-            Tap 67, 755
-            Delay 500
-        Case 2 //第三章
-            Swipe 55, 350, 55, 1170
-            Delay 1000
-            Tap 67, 755
-            Delay 500
-            Tap 69,1083
-            Delay 500
-        Case 3 //第四章
-            Swipe 55, 1070, 55, 50
-            Delay 1000
-            Tap 65,689
-            Delay 500
-            Tap 70,357
-            Delay 500
-        Case 4 //第五章
-            Swipe 55, 1070, 55, 50
-            Delay 1000
-            Tap 70,357
-            Delay 500
-            Tap 65, 689
-            Delay 500
-        Case 5 //第六章
-            Swipe 55, 1070, 55, 50
-            Delay 1000
-            Tap 65,689
-            Delay 500
-            Tap 65, 1001
-            Delay 500
-        End Select
+    Delay 1000 //防止卡顿出现选错图
+    Select Case mainMap
+    Case 0 //第一章
+        Swipe 55, 350, 55, 1170
+        Delay 1000
+        Tap 67, 755
+        Delay 500
+        Tap 61,465
+        Delay 500
+    Case 1 //第二章
+        Swipe 55, 350, 55, 1170
+        Delay 1000
+        Tap 61,465
+        Delay 500
+        Tap 67, 755
+        Delay 500
+    Case 2 //第三章
+        Swipe 55, 350, 55, 1170
+        Delay 1000
+        Tap 67, 755
+        Delay 500
+        Tap 69,1083
+        Delay 500
+    Case 3 //第四章
+        Swipe 55, 1070, 55, 50
+        Delay 1000
+        Tap 65,689
+        Delay 500
+        Tap 70,357
+        Delay 500
+    Case 4 //第五章
+        Swipe 55, 1070, 55, 50
+        Delay 1000
+        Tap 70,357
+        Delay 500
+        Tap 65, 689
+        Delay 500
+    Case 5 //第六章
+        Swipe 55, 1070, 55, 50
+        Delay 1000
+        Tap 65,689
+        Delay 500
+        Tap 65, 1001
+        Delay 500
+    End Select
             
-        Select Case subMap
-        Case 0
-            Tap 378, 656
-        Case 1
-            Swipe 377, 983, 377, 483
-            Delay 500
-            Tap 378, 656
-        Case 2
-            Swipe 377, 983, 377, 483
-            Delay 500
-            Swipe 377, 983, 377, 483
-            Delay 500
-            Tap 378, 656
-        Case 3
-            Swipe 377, 983, 377, 483
-            Delay 500
-            Swipe 377, 983, 377, 483
-            Delay 500
-            Swipe 377, 983, 377, 483
-            Delay 500
-            Tap 378, 656
-        Case 4
-            Swipe 377, 983, 377, 483
-            Delay 500
-            Swipe 377, 983, 377, 483
-            Delay 500
-            Swipe 377, 983, 377, 483
-            Delay 500
-            Swipe 377, 983, 377, 483
-            Delay 500
-            Tap 378, 656
-        End Select
-        needSelectMap = False
-    Else 
+    Select Case subMap
+    Case 0
         Tap 378, 656
-        TracePrint "点击进入出征准备"
-    End If
+    Case 1
+        Swipe 377, 983, 377, 483
+        Delay 500
+        Tap 378, 656
+    Case 2
+        Swipe 377, 983, 377, 483
+        Delay 500
+        Swipe 377, 983, 377, 483
+        Delay 500
+        Tap 378, 656
+    Case 3
+        Swipe 377, 983, 377, 483
+        Delay 500
+        Swipe 377, 983, 377, 483
+        Delay 500
+        Swipe 377, 983, 377, 483
+        Delay 500
+        Tap 378, 656
+    Case 4
+        Swipe 377, 983, 377, 483
+        Delay 500
+        Swipe 377, 983, 377, 483
+        Delay 500
+        Swipe 377, 983, 377, 483
+        Delay 500
+        Swipe 377, 983, 377, 483
+        Delay 500
+        Tap 378, 656
+    End Select
+    TracePrint "已选择地图" & mainMap+1 & "-" & subMap+1
 End Function
 
 //开始演习循环
@@ -411,6 +442,10 @@ Function waitScreen(sName)
             If CmpColorEx("694|69|BC8C27-101010,655|233|89530E-101010,700|745|8B5408-101010,691|1110|644124-101010,65|1122|7F4C04-101010", 0.9) = 1 Then 
                 waitOk = true
             End If
+        ElseIf sName = "开始补给" Then
+            If CmpColorEx("555|403|C1CCD3,174|758|C18F00,210|932|F1CD43,578|983|0D0F9A", 0.9)= 1 then
+                waitOk = true
+            End if
         ElseIf sName = "选择远征目标" Then
             If CmpColorEx("619|67|C08E00,526|69|C08E00,433|68|044AAF,337|66|C08E00", 0.9) = 1 Then 
                 waitOk = true
@@ -491,7 +526,7 @@ Function checkScreenSize()
 End Function
 
 Function checkEverydayBounce()
-	TracePrint "每日公告/奖励"
+    TracePrint "每日公告/奖励"
     //公告
     If CmpColorEx("64|61|2C3F4A,689|106|885102,669|1251|080C97,72|1180|9FB6C4", 0.9) = 1 Then 
         TracePrint "关闭公告"
