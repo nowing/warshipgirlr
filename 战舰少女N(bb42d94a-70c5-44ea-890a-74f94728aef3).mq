@@ -101,6 +101,11 @@ Function exec61
 
     supplyAll 
 
+	Tap 50 + rand(20), 590 + rand(20) //点击出征
+	Delay 2000
+	Tap 360, 540  //随意点击，进入索敌
+	
+	doOneBattle
 
 End Function
 
@@ -306,7 +311,7 @@ Function execYanxi()
             Tap intX + rand(10), intY + rand(10)  //点击对手
             waitScreen ("出征准备")
             
-            doBattle
+            doOneBattle
         Else 
             TracePrint "找不到对手"
             bSelectFleet = false
@@ -321,8 +326,23 @@ Function execYanxi()
 	
 End Function
 
+Function restartGame()
+	KeyPress "Back"
+	Delay 1000
+	
+	Tap 230 + rand(20), 450 + rand(20)  //确认退出游戏
+	Delay 5000
+	
+	//重新启动游戏
+	RunApp "com.huanmeng.zhanjian2"
+	Delay 10 * 1000
+	waitScreen("登录画面")
+
+	
+End Function
+
 //1次战斗：从索敌开始，到经验画面
-Function doBattle
+Function doOneBattle
     Dim bSelectShape = false //战斗阵型画面
     Dim inBattle = true //战斗标识
 
@@ -333,6 +353,19 @@ Function doBattle
         If CmpColorEx("461|213|0909BA-101010,460|250|1818C7-101010,461|303|3535E1-101010,462|341|4747F1-101010,125|876|054AAC-101010", 0.9) = 1 Then 
             //索敌成功
             bSelectShape = true
+            
+            // 6-1时，判断CV和SS
+            If uiMode = 2 or uiMode = 3 Then 
+            	//总是判断航母
+            	
+            	
+            	//条件判断雷巡
+            	If uiMode = 2 Then 
+            		If CmpColorEx("369|539|F593FE,249|279|F28FFE,505|273|92E4FE,384|271|7DE5FF,459|543|6757BD", 0.9) = 1 Then 
+            			restartGame()
+            		End If
+            	End If
+            End If
             		
             Tap 140 + rand(10), 830 + rand(50) //点击开始战斗
             waitScreen ("选择战斗阵型")
