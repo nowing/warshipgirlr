@@ -19,7 +19,7 @@ SetScreenScale 720, 1280
 Log.Open
 
 //获取UI界面设置参数
-Dim uiMode = ReadUIConfig("cfgMode",0)     //模式 0：远征 1：演习 2：6-1打SS 3：6-1躲CV
+Dim uiMode = ReadUIConfig("cfgMode",0)     //模式 0：远征 1：演习 2：6-1只打SS 3：6-1躲CV
 TracePrint "uiMode=" & uiMode
 
 Dim uiShape = ReadUIConfig("cfgShape", 0)  //阵型 0：单纵 1：复纵 2：轮型 3：梯形 4：单横
@@ -122,8 +122,11 @@ Function exec61
     supplyAll 
 
     Tap 50 + rand(20), 590 + rand(20) //点击出征
+    TracePrint "出征开始"
     Delay 2000
+    
     Tap 360, 540  //随意点击，进入索敌
+    TracePrint "开始索敌"
 	
     doOneBattle 
     If needRestart Then 
@@ -137,6 +140,7 @@ Function checkQuickRepire()
     Dim findYellow = false
     Dim findRed = false
 	
+	TracePrint "检测快速修理"
     For i = 1 To 10
         FindColor 316,316,321,1083, "0707BF|0B0CE4", 0, 0.9, intX, intY
         If intX > -1 Then 
@@ -327,13 +331,15 @@ Function execYanxi()
     Dim bSelectFleet = true  //演习对手
     While bSelectFleet
         waitScreen("选择演习对手")
-        FindMultiColor 0, 0, 0, 0, "024BB4-101010", "35|-3|3985E9-101010,-1|131|024BB3-101010,33|129|3582E7-101010", 0, 0.9, intX, intY
+        //FindMultiColor 0, 0, 0, 0, "024BB4-101010", "35|-3|3985E9-101010,-1|131|024BB3-101010,33|129|3582E7-101010", 0, 0.9, intX, intY
+        FindColor 107, 1045, 620, 1045, "034AAF-101010", 0, 0.9, intX, intY
         TracePrint intX, intY
         If intX > -1 Then 
             TracePrint "找到对手"
             Tap intX + rand(10), intY + rand(10)  //点击对手
             waitScreen ("出征准备")
             
+            Tap 40, 640 //点击出征
             doOneBattle
         Else 
             TracePrint "找不到对手"
@@ -374,21 +380,20 @@ Function doOneBattle
     Dim bSelectShape = false //战斗阵型画面
     Dim inBattle = true //战斗标识
 
-    Tap 40, 640 //点击出征
             
     //等待索敌
     While not bSelectShape
-        If CmpColorEx("461|213|0909BA-101010,460|250|1818C7-101010,461|303|3535E1-101010,462|341|4747F1-101010,125|876|054AAC-101010", 0.9) = 1 Then 
+    	//演习索敌  cf0bae1a0337dfee3680
+        If CmpColorEx("132|329|78A2BC,86|806|044AAE,121|952|3985EA,420|207|0707B9", 0.9) = 1 or CmpColorEx("461|213|0909BA-101010,460|250|1818C7-101010,461|303|3535E1-101010,462|341|4747F1-101010,125|876|054AAC-101010", 0.9) = 1 Then 
             //索敌成功
             bSelectShape = true
+            TracePrint "索敌成功"
             
             // 6-1时，判断CV和SS
             If uiMode = 2 or uiMode = 3 Then 
                 //总是判断航母
-                KeepCapture
                 If CmpColorEx("491|252|4D3269,484|283|5A2C82,492|512|5B377F,485|546|5B2C84,385|273|95E6FF,386|534|7FE0FF", 0.9) = 1 Then 
-                    ReleaseCapture
-                    ReleaseCapture 
+                  
                     needRestart = true
                     Exit Function
                 End If
@@ -397,12 +402,10 @@ Function doOneBattle
                 //条件判断雷巡
                 If uiMode = 2 Then 
                     If CmpColorEx("369|539|F593FE,249|279|F28FFE,505|273|92E4FE,384|271|7DE5FF,459|543|6757BD", 0.9) = 1 Then 
-                        ReleaseCapture
                         needRestart = true
                         Exit Function
                     End If
                 End If
-                ReleaseCapture
             End If
             		
             Tap 140 + rand(10), 830 + rand(50) //点击开始战斗
@@ -410,7 +413,15 @@ Function doOneBattle
         ElseIf CmpColorEx("639|833|824F06-101010,646|1005|82D86F-101010,617|1057|41C335-101010,313|991|CCCCCC-101010,312|1057|2F2D26-101010", 0.9) = 1 Then
             //索敌失败，直接进入选择战斗阵型
             bSelectShape = true
+            TracePrint "索敌失败"
+            
+            If uiMode = 3 Then  //未发现航母
+            	needRestart = true
+            	Exit Function
+            End If
         End If
+		TracePrint "未发现索敌界面"
+		Delay 1000
     Wend
             
     //选择阵型
@@ -607,7 +618,7 @@ Function waitScreen(sName)
                 waitOk = true
             End If
         ElseIf sName = "登录画面" Then
-        	If CmpColorEx("521|344|ADDAFC,614|812|537AFD,318|634|7F9993,607|1227|EE629D,46|628|C89A63,386|534|7FE0FF", 0.9) = 1 Then 
+        	If CmpColorEx("517|349|ADDBFC,494|657|9AE0F4,616|813|537AFD,506|226|E9FBFF,46|628|C89A63", 0.9) = 1 Then 
         		waitOk = true
         	End If
         ElseIf sName = "开始补给" Then
