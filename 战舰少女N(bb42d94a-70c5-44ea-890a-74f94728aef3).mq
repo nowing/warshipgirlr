@@ -46,33 +46,53 @@ End If
 
 
 Dim needSelectMap = true
+Dim needRestart = false
 
-// ----------检测每天初次启动---------------
-checkEverydayBounce
+While true
+    main 
+    If needRestart Then 
+        needRestart = false
+        restartGame
+    End If
+Wend
 
 
-//-------------主循环------------
-If uiMode = 0 Then 
-    ShowMessage "当前为远征模式"
-    TracePrint "当前为远征模式"
-    execYuanZheng 
+//从登录按钮按下后开始
+Function main
+    checkEverydayBounce 
+
+    If uiMode = 0 Then 
+        ShowMessage "当前为远征模式"
+        TracePrint "当前为远征模式"
+        execYuanZheng 
     
-ElseIf uiMode = 1 Then
-    ShowMessage "准备演习"
-    TracePrint "准备演习"
-    execYanxi 
+    ElseIf uiMode = 1 Then
+        ShowMessage "准备演习"
+        TracePrint "准备演习"
+        execYanxi 
     
-ElseIf uiMode = 2 Then
-    ShowMessage "准备出征6-1A：只打SS"
-    TracePrint "准备出征6-1A：只打SS"
-    exec61 
-    
-ElseIf uiMode = 3 Then
-    ShowMessage "准备出征6-1A：不打CV"
-    TracePrint "准备出征6-1A：不打CV"
-    exec61 
-    
-End If
+    ElseIf uiMode = 2 Then
+        ShowMessage "准备出征6-1A：只打SS"
+        TracePrint "准备出征6-1A：只打SS"
+        exec61 
+        If needRestart Then 
+            Exit Function
+        End If
+    	
+    ElseIf uiMode = 3 Then
+        ShowMessage "准备出征6-1A：不打CV"
+        TracePrint "准备出征6-1A：不打CV"
+        exec61 
+        If needRestart Then 
+            Exit Function
+        End If
+    	
+    End If
+End Function
+
+
+
+
 
 
 
@@ -101,11 +121,14 @@ Function exec61
 
     supplyAll 
 
-	Tap 50 + rand(20), 590 + rand(20) //点击出征
-	Delay 2000
-	Tap 360, 540  //随意点击，进入索敌
+    Tap 50 + rand(20), 590 + rand(20) //点击出征
+    Delay 2000
+    Tap 360, 540  //随意点击，进入索敌
 	
-	doOneBattle
+    doOneBattle 
+    If needRestart Then 
+        Exit Function
+    End If
 
 End Function
 
@@ -184,8 +207,8 @@ Function checkQuickRepire()
         End If
     End If
 
-	Tap 580 + rand(20), 970 + rand(20)
-	waitScreen("出征准备")
+    Tap 580 + rand(20), 970 + rand(20)
+    waitScreen("出征准备")
 End Function
 
 
@@ -321,23 +344,28 @@ Function execYanxi()
     //返回主画面
     returnMain 
     
+    checkQuest
+    
     //开始远征
     execYuanZheng
 	
 End Function
 
+//重启游戏
 Function restartGame()
-	KeyPress "Back"
-	Delay 1000
+    KeyPress "Back"
+    Delay 2000
 	
-	Tap 230 + rand(20), 450 + rand(20)  //确认退出游戏
-	Delay 5000
+    //确认退出游戏
+    Tap 230 + rand(20), 450 + rand(20)  
+    Delay 5000
 	
-	//重新启动游戏
-	RunApp "com.huanmeng.zhanjian2"
-	Delay 10 * 1000
-	waitScreen("登录画面")
+    //重新启动游戏
+    RunApp "com.huanmeng.zhanjian2"
+    Delay 10 * 1000
+    waitScreen("登录画面")
 
+    Tap 60 + rand(10), 600 + rand(100)  //点击登录
 	
 End Function
 
@@ -356,15 +384,25 @@ Function doOneBattle
             
             // 6-1时，判断CV和SS
             If uiMode = 2 or uiMode = 3 Then 
-            	//总是判断航母
+                //总是判断航母
+                KeepCapture
+                If CmpColorEx("491|252|4D3269,484|283|5A2C82,492|512|5B377F,485|546|5B2C84,385|273|95E6FF,386|534|7FE0FF", 0.9) = 1 Then 
+                    ReleaseCapture
+                    ReleaseCapture 
+                    needRestart = true
+                    Exit Function
+                End If
             	
             	
-            	//条件判断雷巡
-            	If uiMode = 2 Then 
-            		If CmpColorEx("369|539|F593FE,249|279|F28FFE,505|273|92E4FE,384|271|7DE5FF,459|543|6757BD", 0.9) = 1 Then 
-            			restartGame()
-            		End If
-            	End If
+                //条件判断雷巡
+                If uiMode = 2 Then 
+                    If CmpColorEx("369|539|F593FE,249|279|F28FFE,505|273|92E4FE,384|271|7DE5FF,459|543|6757BD", 0.9) = 1 Then 
+                        ReleaseCapture
+                        needRestart = true
+                        Exit Function
+                    End If
+                End If
+                ReleaseCapture
             End If
             		
             Tap 140 + rand(10), 830 + rand(50) //点击开始战斗
@@ -440,65 +478,79 @@ End Function
 
 //检查远征，如有，收获远征
 Function checkYuanZheng()
-    If CmpColorEx("599|954|3949D6,498|975|5AAAEF,600|1030|4A59D6,582|1055|FFFFFF,372|1071|7B6D19,351|824|DEB631", 0.9)=1 Then 
-        TracePrint "发现远征完成"
-        Tap 490 + rand(30), 900 + rand(100) //点击出征
-        waitScreen("选择远征目标")
-            
-        Dim yuanX, yuanY
-            
-        //查找4行中哪一行成功
-        FindMultiColor 158,1018,662,1212,"054AAC","9|-1|014CB6,2|12|044AAD,13|11|004DBB", 0, 0.9, intX, intY
-        If intX > -1 Then 
-            TracePrint "找到远征成功:" & intX & "," & intY
-            yuanX = intX
-            yuanY = intY
-            Tap yuanX + rand(30), yuanY + rand(180)  //点击成功
-                
-            //远征确认画面
-            waitScreen("远征结果资源")
-            Tap 70 + rand(30), 1030 + rand(50)  //点击确定
-                
-            //返回远征画面，选择新的远征
+	
+    While true
+        If CmpColorEx("599|954|3949D6,498|975|5AAAEF,600|1030|4A59D6,582|1055|FFFFFF,372|1071|7B6D19,351|824|DEB631", 0.9)=1 Then  //主画面远征完成
+            TracePrint "发现远征完成"
+            Tap 490 + rand(30), 900 + rand(100) //点击出征
             waitScreen("选择远征目标")
-            Tap yuanX + rand(30), yuanY + rand(180)  //点击原出征
-            Delay 2000
-                
-            //远征准备画面
-            waitScreen ("选择远征舰队")
             
-            //从4号舰队开始往前，看是否能远征
-            Tap 225 + rand(10), 840 + rand(10)  //点击第4舰队
-            Delay 2000
-    
-            For i = 0 To 3
-                intx = 225 + rand(10)
-                inty = 840 + rand(10) - 126 * i
-
-                Tap intx, inty   //点击第i舰队
+            Dim yuanX, yuanY
+            
+            //查找4行中哪一行成功
+            FindMultiColor 158,1018,662,1212,"054AAC","9|-1|014CB6,2|12|044AAD,13|11|004DBB", 0, 0.9, intX, intY
+            If intX > -1 Then 
+                TracePrint "找到远征成功:" & intX & "," & intY
+                yuanX = intX
+                yuanY = intY
+                Tap yuanX + rand(30), yuanY + rand(180)  //点击成功
+                
+                //远征确认画面
+                waitScreen("远征结果资源")
+                Tap 70 + rand(30), 1030 + rand(50)  //点击确定
+                
+                //返回远征画面，选择新的远征
+                waitScreen("选择远征目标")
+                Tap yuanX + rand(30), yuanY + rand(180)  //点击原出征
                 Delay 2000
-
-                If CmpColorEx("28|527|008EF3-101010,28|593|008EF3-101010,26|725|008EF3-101010,87|630|008EF3-101010", 0.9) = 0 Then 
-                    TracePrint "舰队" &(4-i) & "不能出征"
-                Else 
-                    //可以出征
-                    TracePrint "舰队" & (4-i) & "可以出征"
-                    Tap 45 + rand(25), 520 + rand(250)   //点击出征
+                
+                //远征准备画面
+                waitScreen ("选择远征舰队")
             
-                    waitScreen "选择远征目标"
-                    Exit For
-                End If
-            Next
+                //从4号舰队开始往前，看是否能远征
+                Dim ret = false  //远征成功标识
+                While not ret
+                    Tap 225 + rand(10), 840 + rand(10)  //点击第4舰队
+                    Delay 2000
+    
+                    For i = 0 To 3
+                        intx = 225 + rand(10)
+                        inty = 840 + rand(10) - 126 * i
+
+                        Tap intx, inty   //点击第i舰队
+                        Delay 2000
+
+                        If CmpColorEx("28|527|008EF3-101010,28|593|008EF3-101010,26|725|008EF3-101010,87|630|008EF3-101010", 0.9) = 0 Then 
+                            TracePrint "舰队" &(4-i) & "不能出征"
+                        Else 
+                            //可以出征
+                            TracePrint "舰队" & (4-i) & "可以出征"
+                            Tap 45 + rand(25), 520 + rand(250)   //点击出征
+            
+                            waitScreen "选择远征目标"
+                            ret = true
+                            Exit For
+                        End If
+                    Next
+                    
+                    If ret = false Then 
+                        TracePrint "未发现可出征舰队，再次选择"
+                    End If
+                Wend
                 
-            //返回主画面
-            returnMain
+                //返回主画面
+                returnMain
+            Else 
+                TracePrint "Bug：应有远征"
+                ShowMessage "Bug：应有远征"
+                EndScript
+                
+            End If
         Else 
-            TracePrint "Bug：应有远征"
-            ShowMessage "Bug：应有远征"
-            EndScript
-                
+            Exit While
         End If
-    End if
+
+    Wend
 End Function
 
 
@@ -554,6 +606,10 @@ Function waitScreen(sName)
             If CmpColorEx("694|69|BC8C27-101010,655|233|89530E-101010,700|745|8B5408-101010,691|1110|644124-101010,65|1122|7F4C04-101010", 0.9) = 1 Then 
                 waitOk = true
             End If
+        ElseIf sName = "登录画面" Then
+        	If CmpColorEx("521|344|ADDAFC,614|812|537AFD,318|634|7F9993,607|1227|EE629D,46|628|C89A63,386|534|7FE0FF", 0.9) = 1 Then 
+        		waitOk = true
+        	End If
         ElseIf sName = "开始补给" Then
             If CmpColorEx("555|403|C1CCD3,174|758|C18F00,210|932|F1CD43,578|983|0D0F9A", 0.9)= 1 then
                 waitOk = true
@@ -649,20 +705,22 @@ Function checkEverydayBounce()
         Tap 70 + rand(5), 65 + rand(5)
         Delay 1000  //左下角勾
 	
-        Tap 670 + rand(20), 1240 + rand(20)
+        Tap 670 + rand(20), 1240 + rand(20)  //右上关闭
         Delay 2000
     End If
 
+    Delay 2000
+	
     //每日奖励
     If CmpColorEx("120|556|034BB2,156|720|3884E9,653|1046|6BCEFB", 0.9) = 1 Then 
         TracePrint "每日奖励"
-        Tap 120 + rand(20), 570 + rand(100)
+        Tap 120 + rand(20), 570 + rand(100)  //
         Delay 2000
 	
-        Tap 220 + rand(20), 580 + rand(100)
-        Delay 1000
+        Tap 220 + rand(20), 580 + rand(100)  //
+        Delay 2000
 	
-        Tap 640 + rand(5), 1035 + rand(5)
-        Delay 1000
+        Tap 640 + rand(5), 1035 + rand(5)    //
+        Delay 2000
     End If
 End Function
