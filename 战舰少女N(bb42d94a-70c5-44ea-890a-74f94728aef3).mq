@@ -33,8 +33,8 @@ Dim uiRepire = ReadUIConfig("cfgRepire", 0) //修理种类 0：大破 1：大破+中破
 
 // --------- test area -------------
 //RunApp "com.huanmeng.zhanjian2"
-uiMode = 2
-uiRepire = 1
+//uiMode = 2
+//uiRepire = 1
 
 //EndScript
 //
@@ -62,8 +62,8 @@ Function main
     checkEverydayBounce 
 
     If uiMode = 0 Then 
-        ShowMessage "当前为远征模式"
-        TracePrint "当前为远征模式"
+        ShowMessage "准备远征"
+        TracePrint "准备远征"
         execYuanZheng 
     
     ElseIf uiMode = 1 Then
@@ -136,8 +136,8 @@ Function exec61
     checkGetShip 
 	
     waitScreen ("是否前进") //回港
-	Tap 370 + rand(10), 730 + rand(10)
-	TracePrint "回港"
+    Tap 370 + rand(10), 730 + rand(10)
+    TracePrint "回港"
 
 End Function
 
@@ -404,7 +404,7 @@ Function doOneBattle
             
     //等待索敌
     While not bSelectShape
-        //演习索敌  cf0bae1a0337dfee3680
+        //演习索敌  
         If CmpColorEx("132|329|78A2BC,86|806|044AAE,121|952|3985EA,420|207|0707B9", 0.9) = 1 or CmpColorEx("461|213|0909BA-101010,460|250|1818C7-101010,461|303|3535E1-101010,462|341|4747F1-101010,125|876|054AAC-101010", 0.9) = 1 Then 
             //索敌成功
             bSelectShape = true
@@ -429,8 +429,10 @@ Function doOneBattle
                 End If
             End If
 			
-            If uiMode = 0 Then 
-                Tap 140 + rand(10), 830 + rand(50) //演习开始战斗
+            Delay 1000
+			
+            If uiMode = 1 Then 
+                Tap 140 + rand(10), 860 + rand(10) //演习开始战斗
             Else 
                 Tap 95 + rand (10), 830 + rand(50)  //出征开始战斗
             End If
